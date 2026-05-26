@@ -1,0 +1,87 @@
+esphome:
+  name: master-bedroom-ac
+  friendly_name: master-bedroom-ac
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "STEDvYWX1zTqMlP6j7tm+lI2LlVFRSyZfV/9U4uIt/k="
+
+ota:
+  - platform: esphome
+    password: "73e733232917ffeb2cb12b112c56f3c2"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Master-Bedroom-Ac"
+    password: "RZ1FfntShL9k"
+
+captive_portal:
+
+# Binary Status
+binary_sensor:
+  - platform: status
+    name: "MB IR Connected"
+
+# Use the blue LED as a status light.
+#   Blink slowly = Temporary issue (WiFi/MQTT disconnected, sensor unavailable, ...)
+#   Blink quickly = Error encountered
+status_led:
+  pin: GPIO4 #checked
+
+# Configure the IR receiver. Handy to pickup confirmation messages
+# from your AC (or capture commands from the actual remote)
+remote_receiver:
+  id: rcvr
+  pin: 
+    number: GPIO5 #checked
+    inverted: True
+    mode: 
+      input: True
+      pullup: True
+  tolerance: 60%  
+  #dump: all
+
+# Configure the IR LED: this one sends commands to other devices
+remote_transmitter:
+  id: transmitter
+  pin: GPIO14 #checked
+  carrier_duty_percent: 50%
+  
+climate:
+  - platform: daikin
+    name: "Master Bedroom AC"
+    receiver_id: rcvr
+    transmitter_id: transmitter
+    sensor: temp
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Strength
+    update_interval: 300s  # Increase interval to reduce load
+
+  - platform: uptime
+    name: "Uptime"
+
+  - platform: dht
+    model: DHT22
+    pin: GPIO2
+    temperature:
+      name: "Temperature"
+      id: temp
+    humidity:
+      name: "Humidity"
+      id: humidity
+    update_interval: 30s
+
+

@@ -1,0 +1,30 @@
+esphome:
+  name: saedfgds
+  friendly_name: saedfgds
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "5xpDTWnmjvAcrIuUHxWYQ0PVy026tuWx5zQi9IgxBxk="
+
+ota:
+  - platform: esphome
+    password: "3881463801615681e2aec68a779af6b0"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Saedfgds Fallback Hotspot"
+    password: "nr4Lm7eLqIUw"
+
+captive_portal:
+    

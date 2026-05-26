@@ -27,6 +27,9 @@ image/
 tmp_backups/
 www/
 
+# Claude Code HA tools — managed separately via git clone on HA
+claude-code-ha/
+
 # Secrets (real passwords live on HA, local file is placeholder)
 secrets.yaml
 

@@ -1,0 +1,76 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include_dir_merge_list automations/
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+template:
+
+input_boolean:
+  night_mode:
+    name: Night Mode
+    icon: mdi:weather-night
+  movie_mode:
+    name: Movie Mode
+    icon: mdi:movie-open
+
+input_number:
+  timeout_motion_normal:
+    name: Motion Timeout Normal
+    min: 30
+    max: 600
+    step: 10
+    unit_of_measurement: s
+  timeout_motion_normal_long:
+    name: Motion Timeout Normal Long
+    min: 60
+    max: 600
+    step: 10
+    unit_of_measurement: s
+  timeout_motion_night:
+    name: Motion Timeout Night
+    min: 5
+    max: 120
+    step: 5
+    unit_of_measurement: s
+  timeout_motion_night_short:
+    name: Motion Timeout Night Short
+    min: 5
+    max: 60
+    step: 5
+    unit_of_measurement: s
+  timeout_motion_movie:
+    name: Motion Timeout Movie
+    min: 5
+    max: 120
+    step: 5
+    unit_of_measurement: s
+  transition_on:
+    name: Light Transition On
+    min: 0
+    max: 10
+    step: 0.5
+    unit_of_measurement: s
+  transition_off:
+    name: Light Transition Off
+    min: 0
+    max: 10
+    step: 0.5
+    unit_of_measurement: s
+
+# Lovelace dashboards — keep the default storage-mode dashboard,
+# add Sweety Home v2 as a YAML-mode dashboard alongside it.
+lovelace:
+  mode: storage
+  dashboards:
+    sweety-home-v2:
+      mode: yaml
+      title: Sweety Home v2
+      icon: mdi:home-heart
+      show_in_sidebar: true
+      filename: dashboards/sweety_home_v2.yaml

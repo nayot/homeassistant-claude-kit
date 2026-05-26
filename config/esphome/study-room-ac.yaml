@@ -1,0 +1,110 @@
+esphome:
+  name: study-room-ac
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "Rj1ek+tpt2bmFG4ccZAB7lm0iPCjwTaMJrzKK0pehKo="
+
+ota:
+  - platform: esphome
+    password: "9a1b893bcac3ffe9c90c9df49ae466e9"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Study-Room-IR Fallback Hotspot"
+    password: "pVioJszLEbJs"
+
+captive_portal:
+
+# Binary Status
+binary_sensor:
+  - platform: status
+    name: "Study IR Connected"
+
+# Use the blue LED as a status light.
+#   Blink slowly = Temporary issue (WiFi/MQTT disconnected, sensor unavailable, ...)
+#   Blink quickly = Error encountered
+status_led:
+  pin: GPIO4 #checked
+
+# Configure the IR receiver. Handy to pickup confirmation messages
+# from your AC (or capture commands from the actual remote)
+remote_receiver:
+  id: rcvr
+  pin: 
+    number: GPIO5 #checked
+    inverted: True
+    mode: 
+      input: True
+      pullup: True
+  tolerance: 60%  
+  #dump: all
+
+# Configure the IR LED: this one sends commands to other devices
+remote_transmitter:
+  id: transmitter
+  pin: GPIO14 #checked
+  carrier_duty_percent: 50%
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Strength
+    update_interval: 300s  # Increase interval to reduce load
+
+  - platform: uptime
+    name: "Uptime"
+
+  - platform: dht
+    model: DHT22
+    pin: GPIO2
+    temperature:
+      name: "Temperature"
+      id: temp
+    humidity:
+      name: "Humidity"
+      id: humidity
+    update_interval: 30s
+  
+climate:
+  - platform: daikin
+    name: "Study Room AC"
+    receiver_id: rcvr
+    transmitter_id: transmitter
+    sensor: temp
+
+light:
+  - platform: binary
+    name: "Ambient LEDs"
+    output: ambient_led_output
+
+output:
+  - platform: template
+    id: ambient_led_output
+    type: binary
+    write_action:
+      - if:
+          condition:
+            - lambda: 'return state;'
+          then:
+            - remote_transmitter.transmit_nec:
+                address: 0xEF00
+                command: 0xFC03
+                repeat:
+                  times: 1
+          else:
+            - remote_transmitter.transmit_nec:
+                address: 0xEF00
+                command: 0xFD02
+                repeat:
+                  times: 1

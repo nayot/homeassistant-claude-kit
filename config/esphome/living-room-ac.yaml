@@ -1,0 +1,124 @@
+esphome:
+  name: living-room-ac
+  friendly_name: living-room-ac
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "yb26Zt1Jc+/dbymcujSxnGepl7lADDu7fdgK5uRuy6A="
+
+ota:
+  - platform: esphome
+    password: "4a4390afafa527c0e2472c26a616459e"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Living-Room-Ac Fallback Hotspot"
+    password: "IRvOoINdYbch"
+
+captive_portal:
+    
+# Binary Status
+binary_sensor:
+  - platform: status
+    name: "Living Room IR Connected"
+
+# Use the blue LED as a status light.
+#   Blink slowly = Temporary issue (WiFi/MQTT disconnected, sensor unavailable, ...)
+#   Blink quickly = Error encountered
+# status_led:
+#  pin: GPIO4 #checked
+
+# Configure the IR receiver. Handy to pickup confirmation messages
+# from your AC (or capture commands from the actual remote)
+remote_receiver:
+  id: rcvr
+  pin: 
+    number: GPIO14 #checked
+    inverted: True
+    mode: 
+      input: True
+      pullup: True
+  tolerance: 60%  
+  #dump: pronto
+
+# Configure the IR LED: this one sends commands to other devices
+remote_transmitter:
+  id: transmitter
+  pin: GPIO4 #checked
+  carrier_duty_percent: 50%
+  
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Strength
+    update_interval: 300s  # Increase interval to reduce load
+
+  - platform: uptime
+    name: "Uptime"
+
+  - platform: homeassistant
+    name: "Current Temperature"
+    entity_id: sensor.dht_temperature
+    id: temp_living
+    internal: True
+
+# climate:
+#   - platform: mitsubishi
+#     name: "Living Room AC"
+#     set_fan_mode: "quiet_4levels"
+#     supports_dry: "true"
+#     supports_fan_only: "true"
+#     horizontal_default: "middle"
+#     vertical_default: "middle"
+#     receiver_id: rcvr
+#     transmitter_id: transmitter
+#     sensor: temp_living
+
+climate:
+  - platform: heatpumpir
+    name: "Living Room AC"
+    protocol: "mitsubishi_msy"
+    horizontal_default: "middle"
+    vertical_default: "auto"
+    max_temperature: 31
+    min_temperature: 18
+    receiver_id: rcvr
+    transmitter_id: transmitter
+    sensor: temp_living
+
+light:
+  - platform: binary
+    name: "TV"
+    output: tv_output
+
+output:
+  - platform: template
+    id: tv_output
+    type: binary
+    write_action:
+      - if:
+          condition:
+            - lambda: 'return state;'
+          then:
+            - remote_transmitter.transmit_pronto:
+                data: "0000 006D 0001 0011 0140 009e 0014 003c 0014 003c 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 003c 0014 003c 0014 003c 0014 0014 0014 003c 0014 0014 0014 0014 0014 0014 0014 0379"
+                repeat:
+                  times: 5
+                  wait_time: 16ms
+          else:
+            - remote_transmitter.transmit_pronto:
+                data: "0000 006D 0001 0011 0140 009e 0014 003c 0014 003c 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 0014 003c 0014 003c 0014 003c 0014 0014 0014 003c 0014 0014 0014 0014 0014 0014 0014 0379"
+                repeat:
+                  times: 5
+                  wait_time: 16ms

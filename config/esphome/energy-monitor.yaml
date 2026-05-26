@@ -1,0 +1,62 @@
+esphome:
+  name: energy-monitor
+  friendly_name: Energy-Monitor
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "P82gXItX0URk3OAZp7lfOIrg8CsKEaDUiV3zLgprzLs="
+
+ota:
+  - platform: esphome
+    password: "3d44623badc5c056090da668048671e6"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Energy-Monitor Fallback Hotspot"
+    password: "zq2COjDWc9C9"
+
+captive_portal:
+
+uart:
+  rx_pin: GPIO4
+  tx_pin: GPIO5
+  baud_rate: 9600
+
+modbus:
+
+sensor:
+  - platform: pzemac
+    current:
+      name: "PZEM-004T V3 Current"
+      # filters: 
+      #   - multiply: 0.758
+    voltage:
+      name: "PZEM-004T V3 Voltage"
+      # filters: 
+      #   - multiply: 0.758
+    energy:
+      name: "PZEM-004T V3 Energy"
+      # filters: 
+      #   - multiply: 0.758
+    power:
+      name: "PZEM-004T V3 Power"
+      # filters: 
+      #   - multiply: 0.758
+    frequency:
+      name: "PZEM-004T V3 Frequency"
+    power_factor:
+      name: "PZEM-004T V3 Power Factor"
+    update_interval: 5s
+
+    
