@@ -15,6 +15,7 @@ export function useRoomActions(
     activeMedia: string | undefined;
     mediaState: string | undefined;
     isMuted: boolean | undefined;
+    acOn: boolean;
   },
 ) {
   const connection = useHass((s) => s.connection);
@@ -53,6 +54,18 @@ export function useRoomActions(
     { debounceMs: 200 },
   );
 
+  const climateControl = useControlCommit<boolean>(
+    state.acOn,
+    (on) => {
+      if (!connection || !room.climate?.length) return;
+      const service = on ? "turn_on" : "turn_off";
+      room.climate.forEach((id) => {
+        callService(connection, "climate", service, {}, { entity_id: id });
+      });
+    },
+    { debounceMs: 200 },
+  );
+
   const muteControl = useControlCommit<boolean>(
     state.isMuted ?? false,
     (muted) => {
@@ -66,6 +79,12 @@ export function useRoomActions(
     if (lightsControl.phase !== "idle") return;
     lightsControl.set(state.lightsOn === 0);
     lightsControl.commit();
+  };
+
+  const toggleClimate = () => {
+    if (!room.climate?.length || climateControl.phase !== "idle") return;
+    climateControl.set(!state.acOn);
+    climateControl.commit();
   };
 
   const toggleCovers = () => {
@@ -88,10 +107,12 @@ export function useRoomActions(
 
   return {
     toggleLights,
+    toggleClimate,
     toggleCovers,
     togglePlayback,
     toggleMute,
     lightsPhase: lightsControl.phase as Phase,
+    climatePhase: climateControl.phase as Phase,
     coversPhase: coversControl.phase as Phase,
     mediaPhase: mediaControl.phase as Phase,
     mutePhase: muteControl.phase as Phase,

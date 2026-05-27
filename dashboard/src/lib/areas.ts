@@ -7,7 +7,7 @@ export interface RoomConfig {
   icon: string;
   lights: string[];
   occupancySensor?: string;
-  zoneOccupancy?: string[];
+  zoneOccupancy?: { entity: string; label: string }[];
   temperatureSensor?: string;
   humiditySensor?: string;
   co2Sensor?: string;
@@ -21,6 +21,10 @@ export interface RoomConfig {
   climate?: string[];
   effectiveTarget?: string;
   mediaPlayers?: string[];
+  tvPlatform?: string;
+  volumeEntity?: string;
+  remoteEntity?: string;
+  sleepTimer?: string;
 }
 
 export const ROOMS: RoomConfig[] = [

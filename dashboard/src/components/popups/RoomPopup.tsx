@@ -14,6 +14,7 @@ import { CoverControl } from "../controls/CoverControl";
 import { ClimateCluster, SensorBar } from "./HeaderStats";
 import { BottomActionBar } from "./BottomActionBar";
 import { ClimateSection } from "./ClimateSection";
+import { TempHumidityChart } from "./TempHumidityChart";
 import { MediaSection } from "./MediaSection";
 import { Section } from "./RoomPopupShared";
 import { BottomSheet } from "./BottomSheet";
@@ -110,6 +111,11 @@ function RoomContent({ room }: { room: RoomConfig }) {
                 acUnits={AC_UNITS}
               />
             </div>
+          )}
+
+          {/* Temperature / humidity graph */}
+          {(room.temperatureSensor || room.humiditySensor) && (
+            <TempHumidityChart room={room} />
           )}
 
           {/* Media */}

@@ -1,53 +1,66 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useHass } from "@hakit/core";
-import { WEATHER } from "../lib/entities";
+import { WEATHER_FORECAST } from "../lib/entities";
 
 export interface ForecastEntry {
   datetime: string;
   condition: string;
   temperature: number;
   precipitation: number;
-  precipitation_probability: number;
+  precipitation_probability?: number;
   wind_speed: number;
   wind_bearing: number;
+  humidity?: number;
+  cloud_coverage?: number;
+  uv_index?: number;
 }
 
+const POLL_INTERVAL_MS = 15 * 60 * 1000;
+
 /**
- * Subscribe to hourly weather forecast from Home Assistant.
- * Uses the `weather/subscribe_forecast` websocket API (HA 2023.12+).
+ * Fetches hourly weather forecast via `weather.get_forecasts` service call.
+ * Falls back gracefully when no data is available.
  */
 export function useWeatherForecast(): ForecastEntry[] {
   const connection = useHass((s) => s.connection);
   const [forecast, setForecast] = useState<ForecastEntry[]>([]);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!connection) return;
 
-    let stale = false;
-    let unsub: (() => void) | undefined;
+    let cancelled = false;
 
-    connection
-      .subscribeMessage<{ type: string; forecast: ForecastEntry[] | null }>(
-        (msg) => {
-          if (!stale && msg.forecast) {
-            setForecast(msg.forecast);
-          }
-        },
-        {
-          type: "weather/subscribe_forecast",
-          forecast_type: "hourly",
-          entity_id: WEATHER,
-        },
-      )
-      .then((u) => {
-        if (stale) u(); // connection changed before promise resolved — clean up
-        else unsub = u;
-      })
-      .catch(() => { if (!stale) setForecast([]); });
+    async function fetch() {
+      if (!connection || cancelled) return;
+      try {
+        const result = await connection.sendMessagePromise<{
+          response: Record<string, { forecast: ForecastEntry[] }>;
+        }>({
+          type: "call_service",
+          domain: "weather",
+          service: "get_forecasts",
+          service_data: { type: "hourly" },
+          target: { entity_id: WEATHER_FORECAST },
+          return_response: true,
+        });
+        if (!cancelled) {
+          const entries = result?.response?.[WEATHER_FORECAST]?.forecast ?? [];
+          setForecast(entries);
+        }
+      } catch {
+        if (!cancelled) setForecast([]);
+      }
+      if (!cancelled) {
+        timerRef.current = setTimeout(fetch, POLL_INTERVAL_MS);
+      }
+    }
+
+    fetch();
 
     return () => {
-      stale = true;
-      unsub?.();
+      cancelled = true;
+      clearTimeout(timerRef.current);
     };
   }, [connection]);
 

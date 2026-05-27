@@ -1,186 +1,91 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useHass } from "@hakit/core";
 import type { HassEntities } from "home-assistant-js-websocket";
 import { Icon } from "@iconify/react";
 import type { ContextConfig } from "../../lib/entities";
-import { toWatts, formatPower, formatDuration, parseNumericState } from "../../lib/format";
+import { parseNumericState } from "../../lib/format";
 import { weatherIcon, conditionLabel } from "../../lib/weatherIcons";
 import { useWeatherForecast, type ForecastEntry } from "../../hooks/useWeatherForecast";
-import { useAttributeTimeline } from "../../hooks/useStateHistory";
 import { useMinuteTick } from "../../hooks/useMinuteTick";
 
 export function ContextCard({ config }: { config: ContextConfig }) {
   const entities = useHass((s) => s.entities) as HassEntities;
+  const now = useMinuteTick(true);
 
   const timeOfDay = entities[config.timeOfDay]?.state ?? "day";
-
-  // Boiler state + session duration
-  const boilerActive = entities[config.boilerEntity]?.attributes?.hvac_action === "heating";
-  const startOfToday = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
-  }, []);
-  const boilerSpans = useAttributeTimeline(config.boilerEntity, "hvac_action", startOfToday);
-  const now = useMinuteTick(boilerActive);
-  const boilerSessionMs = useMemo(() => {
-    if (!boilerActive || boilerSpans.length === 0) return 0;
-    const last = boilerSpans[boilerSpans.length - 1];
-    if (last.state !== "heating") return 0;
-    return now - last.start;
-  }, [boilerActive, boilerSpans, now]);
-
-  // Energy data
-  const solarE = entities[config.solarPower];
-  const solarW = toWatts(solarE?.state, solarE?.attributes?.unit_of_measurement as string) ?? 0;
-  const loadE = entities[config.loadPower];
-  const loadW = toWatts(loadE?.state, loadE?.attributes?.unit_of_measurement as string) ?? 0;
-  const chargerImportE = entities[config.chargerPower];
-  const chargerOfferedE = entities[config.chargerPowerOffered];
-  const importW = toWatts(chargerImportE?.state, chargerImportE?.attributes?.unit_of_measurement as string) ?? 0;
-  const offeredW = toWatts(chargerOfferedE?.state, chargerOfferedE?.attributes?.unit_of_measurement as string) ?? 0;
-  const connectorState = entities[config.chargerStatus]?.state;
-  const isOcppCharging = connectorState === "Charging";
-  const chargerW = importW > 50 ? importW : (isOcppCharging ? offeredW : 0);
-  const isCharging = isOcppCharging && chargerW > 50;
-
-  // EV battery
-  const batteryLevel = parseNumericState(entities[config.evBattery]?.state);
-  const evChargingState = entities[config.evCharging]?.state;
-  const isEvCharging = evChargingState === "charging" || evChargingState === "starting";
-
-  // Weather data
   const isNight = timeOfDay === "night" || timeOfDay === "evening";
+
   const weatherState = entities[config.weather]?.state ?? "sunny";
   const weatherAttrs = entities[config.weather]?.attributes ?? {};
   const outdoorTemp = parseNumericState(entities[config.outdoorTemp]?.state);
   const humidity = parseNumericState(entities[config.outdoorHumidity]?.state);
-  const pressure = parseNumericState(entities[config.indoorPressure]?.state);
   const windSpeed = weatherAttrs.wind_speed as number | undefined;
   const windBearing = weatherAttrs.wind_bearing as number | undefined;
-  const forecastLow = parseNumericState(entities[config.forecastLow]?.state);
-  const forecastHigh = parseNumericState(entities[config.forecastHigh]?.state);
+  const pressure = parseNumericState(entities[config.indoorPressure]?.state);
 
   const forecast = useWeatherForecast();
-  const forecastSlice = forecast.slice(0, 24);
+  // 3-hour intervals: take every 3rd hourly entry, up to 48 h
+  const forecast3h = forecast.filter((_, i) => i % 3 === 0).slice(0, 16);
+
+  const nowDate = new Date(now);
+  const dateLabel = nowDate.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  const timeLabel = nowDate.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
     <div className="contain-card rounded-2xl bg-bg-card p-5">
-      {/* Weather row */}
-      <div className="flex items-start justify-between gap-4">
-        {/* Left: energy info */}
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
-          {/* Boiler */}
-          <span className="flex items-center gap-1">
-            <Icon
-              icon="ph:fire-duotone"
-              width={15}
-              className={boilerActive ? "" : "text-text-dim"}
-              style={boilerActive ? { animation: "glow-warm 2s ease-in-out infinite" } : undefined}
-            />
-            {boilerActive && boilerSessionMs > 0 && (
-              <span className="tabular-nums">{formatDuration(boilerSessionMs)}</span>
-            )}
-            {!boilerActive && <span className="text-text-dim">off</span>}
-          </span>
+      {/* Date & time */}
+      <div className="mb-4 flex items-baseline justify-between">
+        <span className="text-sm font-medium text-text-secondary">{dateLabel}</span>
+        <span className="text-2xl font-light tabular-nums text-text-primary">{timeLabel}</span>
+      </div>
 
-          {/* Solar production */}
-          {solarW > 50 && (
-            <span className="flex items-center gap-1">
-              <Icon icon="mdi:solar-power" width={14} className="text-accent-warm" />
-              <span className="text-accent-warm">{formatPower(solarW)}</span>
-            </span>
-          )}
-
-          {/* House load */}
-          <span className="flex items-center gap-1">
-            <Icon icon="mdi:home-lightning-bolt" width={14} className="text-text-dim" />
-            {formatPower(loadW)}
-          </span>
-
-          {/* Charger load (only when charging) */}
-          {isCharging && (
-            <span className="flex items-center gap-1">
-              <Icon icon="mdi:ev-station" width={14} className="text-accent-green" />
-              <span className="text-accent-green">{formatPower(chargerW)}</span>
-            </span>
-          )}
-
-          {/* Car battery */}
-          {batteryLevel !== null && (
-            <span className="flex items-center gap-1">
-              <Icon
-                icon="bi:ev-front-fill"
-                width={14}
-                className={isEvCharging ? "text-accent-green" : "text-text-dim"}
-                style={isEvCharging ? { animation: "glow-cool 2s ease-in-out infinite" } : undefined}
-              />
-              <span className={isEvCharging ? "text-accent-green tabular-nums" : "tabular-nums"}>
-                {Math.round(batteryLevel)}%
+      {/* Main weather row */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Left: current temperature */}
+        <div>
+          <div className="text-5xl font-light tabular-nums leading-none">
+            {outdoorTemp !== null ? `${outdoorTemp.toFixed(1)}°` : "—"}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
+            {humidity !== null && (
+              <span className="flex items-center gap-1">
+                <Icon icon="meteocons:humidity" width={16} />
+                {Math.round(humidity)}%
               </span>
-            </span>
-          )}
-        </div>
-
-        {/* Right: weather summary — two columns, top-aligned */}
-        <div className="flex shrink-0 items-start gap-2.5">
-          <div className="flex flex-col items-end">
-            <div className="text-2xl font-light tabular-nums leading-[48px]">
-              {outdoorTemp !== null ? `${outdoorTemp.toFixed(1)}°` : "—"}
-            </div>
-            {(forecastHigh !== null || forecastLow !== null) && (
-              <div className="text-[11px] text-text-secondary tabular-nums">
-                {forecastHigh !== null && <span>{Math.round(forecastHigh)}°</span>}
-                {forecastHigh !== null && forecastLow !== null && <span> / </span>}
-                {forecastLow !== null && <span>{Math.round(forecastLow)}°</span>}
-              </div>
+            )}
+            {windSpeed != null && (
+              <span className="flex items-center gap-1">
+                <Icon icon="meteocons:wind" width={16} />
+                {Math.round(windSpeed)} km/h
+                {windBearing != null && (
+                  <Icon
+                    icon="mdi:navigation"
+                    width={11}
+                    className="text-text-dim"
+                    style={{ transform: `rotate(${windBearing}deg)` }}
+                  />
+                )}
+              </span>
+            )}
+            {pressure !== null && (
+              <span className="flex items-center gap-1">
+                <Icon icon="meteocons:barometer" width={16} />
+                {Math.round(pressure)} hPa
+              </span>
             )}
           </div>
-          <div className="flex flex-col items-center">
-            <Icon
-              icon={weatherIcon(weatherState, isNight)}
-              width={48}
-            />
-            <div className="text-[10px] text-text-secondary">
-              {conditionLabel(weatherState)}
-            </div>
-          </div>
+        </div>
+
+        {/* Right: weather icon + condition */}
+        <div className="flex flex-col items-center gap-1">
+          <Icon icon={weatherIcon(weatherState, isNight)} width={64} />
+          <span className="text-xs text-text-secondary">{conditionLabel(weatherState)}</span>
         </div>
       </div>
 
-      {/* Weather stats row */}
-      <div className="mt-2 flex items-center justify-end gap-4 text-xs text-text-secondary">
-        {humidity !== null && (
-          <span className="flex items-center gap-1">
-            <Icon icon="meteocons:humidity" width={18} />
-            {Math.round(humidity)}%
-          </span>
-        )}
-        {windSpeed != null && (
-          <span className="flex items-center gap-1">
-            <Icon icon="meteocons:wind" width={18} />
-            {Math.round(windSpeed)} km/h
-            {windBearing != null && (
-              <Icon
-                icon="mdi:navigation"
-                width={12}
-                className="text-text-dim"
-                style={{ transform: `rotate(${windBearing}deg)` }}
-              />
-            )}
-          </span>
-        )}
-        {pressure !== null && (
-          <span className="flex items-center gap-1">
-            <Icon icon="meteocons:barometer" width={18} />
-            {Math.round(pressure)} hPa
-          </span>
-        )}
-      </div>
-
-      {/* Hourly forecast — always visible */}
-      {forecastSlice.length > 0 && (
-        <HourlyForecast entries={forecastSlice} />
+      {/* 3-hour forecast strip */}
+      {forecast3h.length > 0 && (
+        <HourlyForecast entries={forecast3h} />
       )}
     </div>
   );
@@ -212,12 +117,11 @@ function HourlyForecast({ entries }: { entries: ForecastEntry[] }) {
   }, [entries.length]);
 
   const scroll = (dir: -1 | 1) => {
-    scrollRef.current?.scrollBy({ left: dir * 200, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: dir * 240, behavior: "smooth" });
   };
 
   return (
-    <div className="relative mt-3 -mx-1">
-      {/* Left fade + arrow */}
+    <div className="relative mt-4 -mx-1">
       {canScrollLeft && (
         <button
           onClick={() => scroll(-1)}
@@ -227,32 +131,42 @@ function HourlyForecast({ entries }: { entries: ForecastEntry[] }) {
         </button>
       )}
 
-      {/* Scrollable forecast strip */}
       <div
         ref={scrollRef}
         className="flex gap-1 overflow-x-auto px-1 scrollbar-none"
       >
         {entries.map((entry) => {
-          const hour = new Date(entry.datetime).getHours();
+          const date = new Date(entry.datetime);
+          const hour = date.getHours();
+          const isToday = date.toDateString() === new Date().toDateString();
           const entryIsNight = hour >= 21 || hour < 6;
+          const timeLabel = hour === 0 && !isToday
+            ? date.toLocaleDateString(undefined, { weekday: "short" })
+            : `${hour.toString().padStart(2, "0")}:00`;
+
           return (
             <div
               key={entry.datetime}
-              className="flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2.5 py-2 text-xs"
+              className="flex shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2.5 text-xs min-w-[64px]"
             >
-              <span className="text-text-dim">
-                {hour.toString().padStart(2, "0")}
-              </span>
-              <Icon
-                icon={weatherIcon(entry.condition, entryIsNight)}
-                width={28}
-              />
-              <span className="font-medium tabular-nums">
-                {Math.round(entry.temperature)}°
-              </span>
-              {entry.precipitation_probability > 0 && (
-                <span className="text-[10px] text-blue-400 tabular-nums">
-                  {Math.round(entry.precipitation_probability)}%
+              <span className="text-text-dim font-medium">{timeLabel}</span>
+              <Icon icon={weatherIcon(entry.condition, entryIsNight)} width={32} />
+              <span className="font-semibold tabular-nums">{Math.round(entry.temperature)}°</span>
+              {entry.wind_speed > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] text-text-dim tabular-nums">
+                  <Icon icon="mdi:weather-windy" width={11} />
+                  {Math.round(entry.wind_speed)}
+                </span>
+              )}
+              {(entry.precipitation ?? 0) > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] text-blue-400 tabular-nums">
+                  <Icon icon="mdi:water" width={10} />
+                  {entry.precipitation!.toFixed(1)}
+                </span>
+              )}
+              {entry.humidity != null && (
+                <span className="text-[10px] text-text-dim tabular-nums">
+                  {Math.round(entry.humidity)}%
                 </span>
               )}
             </div>
@@ -260,7 +174,6 @@ function HourlyForecast({ entries }: { entries: ForecastEntry[] }) {
         })}
       </div>
 
-      {/* Right fade + arrow */}
       {canScrollRight && (
         <button
           onClick={() => scroll(1)}
@@ -272,4 +185,3 @@ function HourlyForecast({ entries }: { entries: ForecastEntry[] }) {
     </div>
   );
 }
-

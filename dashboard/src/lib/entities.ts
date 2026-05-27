@@ -20,6 +20,21 @@ export interface ContextConfig {
   chargerStatus: string;
   evBattery: string;
   evCharging: string;
+  weather: string;
+  outdoorTemp: string;
+  outdoorHumidity: string;
+  indoorPressure: string;
+  forecastLow: string;
+  forecastHigh: string;
+}
+
+export interface EnergyConfig {
+  loadPower: string;
+  loadEnergy: string;
+  loadVoltage: string;
+  loadCurrent: string;
+  loadFrequency: string;
+  loadPowerFactor: string;
 }
 
 export interface QuickActionsConfig {
@@ -57,6 +72,7 @@ export interface VacuumConfig {
 
 export interface CameraConfig {
   id: string;
+  name?: string;
   label?: string;
   entity: string;
   batterySensor?: string;
@@ -64,6 +80,8 @@ export interface CameraConfig {
   chargingSensor?: string;
   eventImage?: string;
   personSensor?: string;
+  go2rtcStream?: string;
+  hasGateLock?: boolean;
 }
 
 interface ScheduleGroup {
@@ -111,10 +129,23 @@ export const TIMEOUT_MOTION_MOVIE        = "input_number.timeout_motion_movie";
 export const TRANSITION_ON               = "input_number.transition_on";
 export const TRANSITION_OFF              = "input_number.transition_off";
 
+// ── Climate / AC ───────────────────────────────────────────────────────────
+export const LR_AC           = "climate.living_room_ac_living_room_ac";
+export const LR_AC_MANUAL    = "input_boolean.living_room_ac_toggle";
+export const BR_AC           = "climate.master_bedroom_ac_master_bedroom_ac";
+export const BR_AC_MANUAL    = "input_boolean.master_bedroom_ac_toggle";
+export const STUDY_AC        = "climate.study_room_ac_study_room_ac";
+export const STUDY_AC_MANUAL = "input_boolean.study_room_ac_toggle";
+
 // ── Energy & power ─────────────────────────────────────────────────────────
 export const SOLAR_POWER = "";
 export const DISHWASHER_STATUS        = "";
 export const DISHWASHER_TIME_REMAINING = "";
+export const ENERGY_KWH        = "sensor.energy_monitor_pzem_004t_v3_energy";
+export const LOAD_VOLTAGE      = "sensor.energy_monitor_pzem_004t_v3_voltage";
+export const LOAD_CURRENT      = "sensor.energy_monitor_pzem_004t_v3_current";
+export const LOAD_FREQUENCY    = "sensor.energy_monitor_pzem_004t_v3_frequency";
+export const LOAD_POWER_FACTOR = "sensor.energy_monitor_pzem_004t_v3_power_factor";
 
 // ── Security ───────────────────────────────────────────────────────────────
 export const CAMERAS: CameraConfig[] = [];
@@ -131,6 +162,7 @@ export const SYSTEM_LAST_BOOT = "";
 
 // ── Weather ────────────────────────────────────────────────────────────────
 export const WEATHER = "weather.forecast_home";
+export const WEATHER_FORECAST = "weather.forecast_home_2";
 
 // ── Climate zone map ───────────────────────────────────────────────────────
 // This setup uses individual AC units per room — no zone controller.
@@ -158,6 +190,12 @@ export const CONTEXT_CONFIG: ContextConfig = {
   chargerStatus:      "",
   evBattery:          "",
   evCharging:         "",
+  weather:            WEATHER,
+  outdoorTemp:        "sensor.dht_temperature",
+  outdoorHumidity:    "sensor.dht_humidity",
+  indoorPressure:     "",
+  forecastLow:        "",
+  forecastHigh:       "",
 };
 
 export const QUICK_ACTIONS_CONFIG: QuickActionsConfig = {
@@ -174,8 +212,8 @@ export const ACTIVE_AUTOMATIONS_CONFIG: ActiveAutomationsConfig = {
   movieMode: MOVIE_MODE,
   workMode:  WORK_MODE,
   awayMode:  AWAY_MODE,
-  lrAc:   "climate.living_room_ac_living_room_ac",
-  brAc:   "climate.master_bedroom_ac_master_bedroom_ac",
+  lrAc:   LR_AC,
+  brAc:   BR_AC,
   sparePower:          SOLAR_POWER,
   chargerStatus:       "",
   chargerPower:        "",
@@ -192,6 +230,15 @@ export const VACUUM_CONFIG: VacuumConfig = {
   turboMode:   "",
   lamp:        "",
   power:       "",
+};
+
+export const ENERGY_CONFIG: EnergyConfig = {
+  loadPower:       "sensor.energy_monitor_pzem_004t_v3_power",
+  loadEnergy:      ENERGY_KWH,
+  loadVoltage:     LOAD_VOLTAGE,
+  loadCurrent:     LOAD_CURRENT,
+  loadFrequency:   LOAD_FREQUENCY,
+  loadPowerFactor: LOAD_POWER_FACTOR,
 };
 
 export const SCHEDULE_EDITOR_CONFIG: ScheduleEditorConfig = [];

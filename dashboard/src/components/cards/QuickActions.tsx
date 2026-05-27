@@ -34,18 +34,6 @@ export function QuickActions({ config }: QuickActionsProps) {
           activeColor="bg-purple-600"
         />
       )}
-      <ModeButton
-        entityId={config.workMode}
-        label="Work"
-        icon="mdi:desk"
-        activeColor="bg-blue-600"
-      />
-      <ModeButton
-        entityId={config.awayMode}
-        label="Away"
-        icon="mdi:home-export-outline"
-        activeColor="bg-orange-600"
-      />
     </div>
   );
 }

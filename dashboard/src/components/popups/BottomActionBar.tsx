@@ -21,6 +21,7 @@ export function BottomActionBar({ room, state, onScrollTo }: BottomActionBarProp
     activeMedia: state.activeMedia,
     mediaState: state.mediaEntity?.state,
     isMuted: state.isMuted,
+    acOn: state.acAction !== undefined,
   });
 
   if (!hasClimate && !hasMedia && !hasCovers) return null;
@@ -59,14 +60,20 @@ export function BottomActionBar({ room, state, onScrollTo }: BottomActionBarProp
           </button>
         )}
 
-        {/* Climate — scroll to section */}
+        {/* Climate toggle */}
         {hasClimate && (
           <button
-            onClick={() => onScrollTo("climate")}
-            className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-2 text-text-dim transition-colors hover:bg-white/5 hover:text-text-primary"
+            onClick={actions.toggleClimate}
+            className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-2 transition-colors hover:bg-white/5 hover:text-text-primary ${actions.climatePhase !== "idle" ? "pointer-events-none animate-pulse" : ""}`}
           >
-            <Icon icon="mdi:thermometer" width={22} />
-            <span className="text-[10px] leading-tight">Climate</span>
+            <Icon
+              icon="mdi:air-conditioner"
+              width={22}
+              className={state.acAction !== undefined ? "text-sky-400" : "text-text-dim"}
+            />
+            <span className={`text-[10px] leading-tight ${state.acAction !== undefined ? "text-text-secondary" : "text-text-dim"}`}>
+              {state.acAction !== undefined ? "On" : "Off"}
+            </span>
           </button>
         )}
 

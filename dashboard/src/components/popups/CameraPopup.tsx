@@ -47,9 +47,9 @@ function CameraContent({ camera, onSnapshot, gateLockEntity }: { camera: CameraC
   const [snapshotRefreshKey, setSnapshotRefreshKey] = useState(0);
   const [isTakingSnapshot, setIsTakingSnapshot] = useState(false);
 
-  const battery = parseNumericState(entities[camera.batterySensor]?.state);
-  const wifi = parseNumericState(entities[camera.wifiSensor]?.state);
-  const charging = entities[camera.chargingSensor]?.state;
+  const battery = parseNumericState(camera.batterySensor ? entities[camera.batterySensor]?.state : undefined);
+  const wifi = parseNumericState(camera.wifiSensor ? entities[camera.wifiSensor]?.state : undefined);
+  const charging = camera.chargingSensor ? entities[camera.chargingSensor]?.state : undefined;
   const cameraState = entities[camera.entity]?.state;
 
   // Watch camera entity state via WS subscription (replaces REST polling).
@@ -178,8 +178,8 @@ function CameraContent({ camera, onSnapshot, gateLockEntity }: { camera: CameraC
   };
 
   // Last person detection from HA history (person sensor last "on" state)
-  const personIsOn = entities[camera.personSensor]?.state === "on";
-  const personLastChanged = entities[camera.personSensor]?.last_changed;
+  const personIsOn = camera.personSensor ? entities[camera.personSensor]?.state === "on" : false;
+  const personLastChanged = camera.personSensor ? entities[camera.personSensor]?.last_changed : undefined;
   const lastPersonTime = personIsOn
     ? "Just now"
     : personLastChanged
@@ -189,7 +189,7 @@ function CameraContent({ camera, onSnapshot, gateLockEntity }: { camera: CameraC
   // Prefer saved snapshot, fall back to event image
   // Use a per-mount timestamp so each popup open busts the browser cache
   const [mountTime] = useState(() => Date.now());
-  const imageEntity = entities[camera.eventImage];
+  const imageEntity = camera.eventImage ? entities[camera.eventImage] : undefined;
   const snapshotUrl = `/local/snapshots/${camera.id}.jpg?_t=${mountTime}`;
   const eventImageUrl = buildImageUrl(imageEntity);
   const imageUrl = !imgError ? snapshotUrl : eventImageUrl;
@@ -247,7 +247,7 @@ function CameraContent({ camera, onSnapshot, gateLockEntity }: { camera: CameraC
               {isStreaming ? (
                 <>
                   <Go2RtcPlayer
-                    stream={camera.go2rtcStream}
+                    stream={camera.go2rtcStream ?? ""}
                     cameraEntity={camera.entity}
                     className="absolute inset-0 h-full w-full"
                     onPlaying={() => setIsPlaying(true)}

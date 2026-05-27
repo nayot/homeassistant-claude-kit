@@ -63,14 +63,12 @@ input_number:
     step: 0.5
     unit_of_measurement: s
 
-# Lovelace dashboards — keep the default storage-mode dashboard,
-# add Sweety Home v2 as a YAML-mode dashboard alongside it.
+panel_custom:
+  - name: custom-dashboard-panel
+    sidebar_title: Claude Kit
+    sidebar_icon: mdi:view-dashboard-variant
+    url_path: custom-dashboard
+    module_url: /local/custom-dashboard/panel.js
+
 lovelace:
   mode: storage
-  dashboards:
-    sweety-home-v2:
-      mode: yaml
-      title: Sweety Home v2
-      icon: mdi:home-heart
-      show_in_sidebar: true
-      filename: dashboards/sweety_home_v2.yaml

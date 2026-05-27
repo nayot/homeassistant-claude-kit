@@ -22,10 +22,10 @@ export function CameraCard({ camera, snapshotVersion = 0, onTap }: CameraCardPro
   useEffect(() => { setSnapshotFailed(false); }, [snapshotVersion]);
 
   const battery = parseNumericState(
-    entities[camera.batterySensor]?.state,
+    camera.batterySensor ? entities[camera.batterySensor]?.state : undefined,
   );
 
-  const imageEntity = entities[camera.eventImage];
+  const imageEntity = camera.eventImage ? entities[camera.eventImage] : undefined;
   const eventImageUrl = buildImageUrl(imageEntity);
 
   // Fetch snapshot file's Last-Modified via HEAD request

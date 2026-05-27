@@ -44,6 +44,7 @@ export function RoomCard({ room, onTap }: RoomCardProps) {
     activeMedia: state.activeMedia,
     mediaState: mediaEntity?.state,
     isMuted,
+    acOn: acAction !== undefined,
   });
 
   // Wrap handlers to stop card navigation
@@ -103,6 +104,21 @@ export function RoomCard({ room, onTap }: RoomCardProps) {
               className={lightsIconColor ? "glow-light" : "text-text-dim"}
             />
             {lightsOn > 0 ? `${lightsOn} on` : "Off"}
+          </span>
+        )}
+
+        {/* AC toggle */}
+        {(room.climate?.length ?? 0) > 0 && (
+          <span
+            className={`relative flex items-center gap-1 rounded-md px-1 -mx-1 transition-transform after:absolute after:content-[''] after:-inset-2 ${actions.climatePhase !== "idle" ? "pointer-events-none animate-pulse" : "hover:text-text-primary active:text-text-primary active:scale-95"}`}
+            onClick={stop(actions.toggleClimate)}
+          >
+            <Icon
+              icon="mdi:air-conditioner"
+              width={14}
+              className={acAction !== undefined ? "text-sky-400" : "text-text-dim"}
+            />
+            {acAction !== undefined ? "On" : "Off"}
           </span>
         )}
 
@@ -190,28 +206,11 @@ export function RoomCard({ room, onTap }: RoomCardProps) {
           </span>
         )}
 
-        {/* Climate indicators — right-aligned in same row */}
-        {(heatingTrvCount > 0 || acAction) && (
-          <span className="ml-auto flex items-center gap-2">
-            {heatingTrvCount > 0 && (
-              <span
-                className="flex items-center gap-0.5"
-                style={{ animation: "glow-warm 2s ease-in-out infinite" }}
-              >
-                <Icon icon="lucide:heater" width={14} />
-                <span className="tabular-nums">{heatingTrvCount}</span>
-              </span>
-            )}
-            {acAction && (
-              <span
-                className="flex items-center"
-                style={{
-                  animation: `${acAction === "cooling" ? "glow-cool" : "glow-warm"} 2s ease-in-out infinite`,
-                }}
-              >
-                <Icon icon="mynaui:air-vent-solid" width={14} />
-              </span>
-            )}
+        {/* TRV heating indicator — right-aligned, only for zone-heat setups */}
+        {heatingTrvCount > 0 && (
+          <span className="ml-auto flex items-center gap-0.5" style={{ animation: "glow-warm 2s ease-in-out infinite" }}>
+            <Icon icon="lucide:heater" width={14} />
+            <span className="tabular-nums">{heatingTrvCount}</span>
           </span>
         )}
       </div>

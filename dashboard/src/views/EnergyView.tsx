@@ -1,22 +1,14 @@
-// Energy view — starter version.
-//
-// For solar + EV charging, copy from docs/templates/:
-//   cards/PowerFlowCard.tsx, cards/EVChargerCard.tsx (+ ManualControls, RuntimeSummary, BatteryGauge)
-//   charts/SolarProductionChart.tsx (+ SolarChartLegend, UPlotChart)
-//   controls/SolarPriorityPicker.tsx
-//   lib/solar-chart-helpers.ts, lib/chart-plugins.ts
-//   hooks/useSolarForecast.ts
-// Then wire EnergyConfig and EvChargerConfig in entities.ts.
+import { ENERGY_CONFIG } from "../lib/entities";
+import { EnergyDetailCard } from "../components/cards/EnergyDetailCard";
+import { MonthlyEnergyCard } from "../components/cards/MonthlyEnergyCard";
+import { YearlyEnergyCard } from "../components/cards/YearlyEnergyCard";
 
 export function EnergyView() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 py-2">
-      <h1 className="text-lg font-semibold">Energy</h1>
-      <p className="text-sm text-text-dim">
-        Add your energy cards here. See{" "}
-        <code>docs/templates/cards/</code> for solar, EV charging, and power
-        flow components.
-      </p>
+      <EnergyDetailCard config={ENERGY_CONFIG} />
+      <MonthlyEnergyCard config={ENERGY_CONFIG} />
+      <YearlyEnergyCard config={ENERGY_CONFIG} />
     </div>
   );
 }

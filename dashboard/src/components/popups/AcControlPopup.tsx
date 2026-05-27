@@ -1,7 +1,6 @@
 import { useHass } from "@hakit/core";
 import type { HassEntities } from "home-assistant-js-websocket";
 import { callService } from "home-assistant-js-websocket";
-import { motion, AnimatePresence } from "framer-motion";
 import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog";
 import { Icon } from "@iconify/react";
 import { parseNumericState } from "../../lib/format";
@@ -78,6 +77,7 @@ function AcControls({ ac }: { ac: AcConfig }) {
 
   const isOff = mode.displayValue === "off";
   const isManual = manual.displayValue;
+  const isTurningOff = !isManual && mode.displayValue !== "off" && mode.displayValue !== "unavailable";
   const isBusy = mode.phase !== "idle" || fan.phase !== "idle" || swing.phase !== "idle" || manual.phase !== "idle";
 
   // Timer remaining
@@ -108,7 +108,7 @@ function AcControls({ ac }: { ac: AcConfig }) {
         </div>
       </div>
 
-      {/* Status row: current temp + mode + action */}
+      {/* Status row: current temp + target temp control */}
       <div className="flex items-center justify-between rounded-xl bg-bg-elevated px-4 py-3">
         <div>
           <div className="text-2xl font-semibold tabular-nums">
@@ -123,116 +123,82 @@ function AcControls({ ac }: { ac: AcConfig }) {
           </div>
         </div>
 
-        {/* Target temp with +/- (only when not off and manual) */}
-        {!isOff && isManual && (
-          <TemperatureControl
-            value={targetTemp}
-            min={minTemp}
-            max={maxTemp}
-            step={tempStep}
-            group={group}
-            onCommit={(temp) => {
-              if (!connection) return;
-              callService(connection, "climate", "set_temperature",
-                { temperature: temp }, { entity_id: ac.entity });
-            }}
-          />
-        )}
-
-        {/* Read-only target in auto mode */}
-        {!isOff && !isManual && (
-          <div className="text-right">
-            <div className="text-xl font-semibold tabular-nums">{targetTemp.toFixed(tempStep < 1 ? 1 : 0)}°</div>
-            <div className="text-[10px] text-text-dim">Target</div>
-          </div>
-        )}
+        <TemperatureControl
+          value={targetTemp}
+          min={minTemp}
+          max={maxTemp}
+          step={tempStep}
+          group={group}
+          onCommit={(temp) => {
+            if (!connection) return;
+            callService(connection, "climate", "set_temperature",
+              { temperature: temp }, { entity_id: ac.entity });
+          }}
+        />
       </div>
 
-      {/* Manual/Auto toggle */}
+      {/* Power button */}
       <button
         onClick={() => manual.set(!manual.displayValue)}
         className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-colors ${
           isManual
-            ? "bg-accent-warm/15 text-accent-warm ring-1 ring-accent-warm/30"
+            ? "bg-sky-400/10 text-sky-400 ring-1 ring-sky-400/30"
+            : isTurningOff
+            ? "bg-accent-warm/10 text-accent-warm ring-1 ring-accent-warm/20"
             : "bg-bg-elevated text-text-secondary hover:bg-white/8"
         }`}
       >
         <div className="flex items-center gap-2">
-          <Icon icon={isManual ? "mdi:hand-back-right" : "mdi:auto-fix"} width={18} />
-          <span className="font-medium">{isManual ? "Manual control" : "Automatic"}</span>
+          <Icon
+            icon={isManual ? "mdi:power" : isTurningOff ? "mdi:fan" : "mdi:power-off"}
+            width={18}
+            className={isTurningOff ? "animate-spin" : ""}
+          />
+          <span className="font-medium">{isManual ? "On" : isTurningOff ? "Turning off" : "Off"}</span>
         </div>
-        <div className="flex items-center gap-2">
-          {isManual && timerRemaining && (
-            <span className="text-xs text-text-dim">{timerRemaining} left</span>
-          )}
-          <div className={`h-5 w-9 rounded-full p-0.5 transition-colors ${isManual ? "bg-accent-warm" : "bg-white/15"}`}>
-            <motion.div
-              className={`h-4 w-4 rounded-full bg-white shadow ${manual.phase === "inflight" ? "ring-2 ring-accent-warm/60 animate-spin" : ""}`}
-              animate={{ x: isManual ? 16 : 0 }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            />
-          </div>
-        </div>
+        {timerRemaining && (
+          <span className="text-xs opacity-60">{timerRemaining} left</span>
+        )}
       </button>
 
-      {/* Controls (only in manual mode) */}
-      <AnimatePresence>
-        {isManual && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-4 overflow-hidden"
-          >
-            {/* HVAC Mode */}
-            <SegmentedControl
-              label="Mode"
-              value={mode.displayValue}
-              phase={mode.phase}
-              options={hvacModes.map((m) => {
-                const meta = getMeta(HVAC_META, m);
-                return { value: m, label: meta.label, icon: meta.icon };
-              })}
-              onChange={(v) => mode.set(v)}
-            />
+      {/* Mode */}
+      <SegmentedControl
+        label="Mode"
+        value={mode.displayValue}
+        phase={mode.phase}
+        options={hvacModes.filter((m) => m !== "off").map((m) => {
+          const meta = getMeta(HVAC_META, m);
+          return { value: m, label: meta.label, icon: meta.icon };
+        })}
+        onChange={(v) => mode.set(v)}
+      />
 
-            {/* Fan Mode (when not off) */}
-            {!isOff && ac.fanModes.length > 0 && (
-              <SegmentedControl
-                label="Fan"
-                value={fan.displayValue}
-                phase={fan.phase}
-                options={ac.fanModes.map((m) => {
-                  const meta = getMeta(FAN_META, m);
-                  return { value: m, label: meta.label, icon: meta.icon };
-                })}
-                onChange={(v) => fan.set(v)}
-              />
-            )}
+      {/* Fan */}
+      {!isOff && ac.fanModes.length > 0 && (
+        <SegmentedControl
+          label="Fan"
+          value={fan.displayValue}
+          phase={fan.phase}
+          options={ac.fanModes.map((m) => {
+            const meta = getMeta(FAN_META, m);
+            return { value: m, label: meta.label, icon: meta.icon };
+          })}
+          onChange={(v) => fan.set(v)}
+        />
+      )}
 
-            {/* Swing Mode (when not off) */}
-            {!isOff && ac.swingModes.length > 0 && (
-              <SegmentedControl
-                label="Swing"
-                value={swing.displayValue}
-                phase={swing.phase}
-                options={ac.swingModes.map((m) => {
-                  const meta = getMeta(SWING_META, m);
-                  return { value: m, label: meta.label, icon: meta.icon };
-                })}
-                onChange={(v) => swing.set(v)}
-              />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Auto mode info */}
-      {!isManual && (
-        <p className="text-center text-xs text-text-dim">
-          Controlled by automations. Enable manual to take over.
-        </p>
+      {/* Swing */}
+      {!isOff && ac.swingModes.length > 0 && (
+        <SegmentedControl
+          label="Swing"
+          value={swing.displayValue}
+          phase={swing.phase}
+          options={ac.swingModes.map((m) => {
+            const meta = getMeta(SWING_META, m);
+            return { value: m, label: meta.label, icon: meta.icon };
+          })}
+          onChange={(v) => swing.set(v)}
+        />
       )}
     </div>
   );

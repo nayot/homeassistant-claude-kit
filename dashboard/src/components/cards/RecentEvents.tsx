@@ -20,14 +20,14 @@ const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 export function RecentEvents({ cameras, doorbellEntity, onCameraTap }: RecentEventsProps) {
   const eventSensors = useMemo(
-    () => [...cameras.map((c) => c.personSensor), doorbellEntity],
+    () => [...cameras.flatMap((c) => c.personSensor ? [c.personSensor] : []), doorbellEntity],
     [cameras, doorbellEntity],
   );
 
   const sensorToCamera = useMemo(() => {
     const map = new Map<string, CameraConfig>();
     for (const cam of cameras) {
-      map.set(cam.personSensor, cam);
+      if (cam.personSensor) map.set(cam.personSensor, cam);
     }
     const doorbellCam = cameras.find((c) => c.id === "doorbell");
     if (doorbellCam) map.set(doorbellEntity, doorbellCam);
