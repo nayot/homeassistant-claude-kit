@@ -199,7 +199,7 @@
             device_id: 7097daddfec36630f32bd06f3cd249d3
         - delay:
             hours: 0
-            minutes: 30
+            minutes: 15
             seconds: 0
             milliseconds: 0
         - metadata: {}
@@ -302,7 +302,7 @@
           action: climate.set_fan_mode
         - delay:
             hours: 0
-            minutes: 30
+            minutes: 15
             seconds: 0
             milliseconds: 0
         - metadata: {}
@@ -398,7 +398,7 @@
             device_id: db2875739677de9eed6273789ab3434b
         - delay:
             hours: 0
-            minutes: 30
+            minutes: 15
             seconds: 0
             milliseconds: 0
         - service: climate.set_hvac_mode
