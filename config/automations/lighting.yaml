@@ -16,10 +16,7 @@
   actions:
   - action: light.turn_on
     target:
-      entity_id:
-      - light.kitchen_light_7
-      - light.kitchen_light_8
-      - light.kitchen_light_9
+      entity_id: light.kitchen_light_7
     data:
       transition: '{{ states(''input_number.transition_on'') | int(1) }}'
   mode: restart
@@ -46,10 +43,7 @@
   actions:
   - action: light.turn_off
     target:
-      entity_id:
-      - light.kitchen_light_7
-      - light.kitchen_light_8
-      - light.kitchen_light_9
+      entity_id: light.kitchen_light_7
     data:
       transition: '{{ states(''input_number.transition_off'') | int(3) }}'
   mode: single

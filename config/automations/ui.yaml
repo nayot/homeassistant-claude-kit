@@ -444,16 +444,6 @@
         target:
           entity_id: input_boolean.master_bedroom_ac_toggle
   mode: single
-- id: '1717846410007'
-  alias: Kitchen Motion Activated
-  description: ''
-  use_blueprint:
-    path: homeassistant/motion_light.yaml
-    input:
-      motion_entity: binary_sensor.kitchen_motion_motion
-      light_target:
-        entity_id: light.kitchen_light_7
-      no_motion_wait: 900
 - id: '1730990753909'
   alias: Zigbee Restart
   description: ''
