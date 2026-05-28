@@ -116,9 +116,15 @@ export function RoomCard({ room, onTap }: RoomCardProps) {
             <Icon
               icon="mdi:air-conditioner"
               width={14}
-              className={acAction !== undefined ? "text-sky-400" : "text-text-dim"}
+              className={
+                actions.climatePhase !== "idle"
+                  ? (actions.climateTarget ? "text-sky-400" : "text-text-dim")
+                  : (acAction !== undefined ? "text-sky-400" : "text-text-dim")
+              }
             />
-            {acAction !== undefined ? "On" : "Off"}
+            {actions.climatePhase !== "idle"
+              ? (actions.climateTarget ? "Turning on" : "Turning off")
+              : (acAction !== undefined ? "On" : "Off")}
           </span>
         )}
 

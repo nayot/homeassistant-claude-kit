@@ -162,7 +162,7 @@ export const SYSTEM_LAST_BOOT = "";
 
 // ── Weather ────────────────────────────────────────────────────────────────
 export const WEATHER = "weather.forecast_home";
-export const WEATHER_FORECAST = "weather.forecast_home_2";
+export const WEATHER_FORECAST = "weather.forecast_home";
 
 // ── Climate zone map ───────────────────────────────────────────────────────
 // This setup uses individual AC units per room — no zone controller.

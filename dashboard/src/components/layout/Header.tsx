@@ -17,7 +17,7 @@ export function Header({ config }: HeaderProps) {
     <header className="sticky top-0 z-30 flex min-w-0 items-center justify-end gap-2 bg-bg-primary/80 px-4 py-2 text-xs backdrop-blur-md">
       {formatTemp(outdoorTemp) && (
         <span className="truncate text-text-secondary">
-          {formatTemp(outdoorTemp)}°C
+          {formatTemp(outdoorTemp)}C
           {weather ? ` · ${weather}` : ""}
         </span>
       )}

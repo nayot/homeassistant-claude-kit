@@ -113,6 +113,7 @@ export function useRoomActions(
     toggleMute,
     lightsPhase: lightsControl.phase as Phase,
     climatePhase: climateControl.phase as Phase,
+    climateTarget: climateControl.displayValue,
     coversPhase: coversControl.phase as Phase,
     mediaPhase: mediaControl.phase as Phase,
     mutePhase: muteControl.phase as Phase,
