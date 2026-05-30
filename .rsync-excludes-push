@@ -30,8 +30,19 @@ www/
 # Claude Code HA tools — managed separately via git clone on HA
 claude-code-ha/
 
+# HA token and claude-code-ha config — managed on HA, never overwrite
+.env
+CLAUDE.md
+
+# HA runtime files — managed by HA, never push
+.ha_run.lock
+.cache/
+
 # Secrets (real passwords live on HA, local file is placeholder)
 secrets.yaml
+
+# Zigbee database — managed by ZHA, never push local copy
+zigbee.db
 
 # Temporary files
 *.tmp

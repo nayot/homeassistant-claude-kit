@@ -7,10 +7,12 @@ worst in the **Living Room**; coordinator is on **wired Ethernet/PoE**.
 All data below is from the **live ZHA WebSocket snapshot** (`tools/zha_diag.py`,
 `zha_diag2.py`, `zha_parents.py`) + local config. No changes were made to HA.
 
-> ⚠️ The HA **recorder history is incomplete after ~2026-05-24** (entities have no
-> state points for 05-25 → 05-30). Quantitative availability forensics were therefore
-> unreliable; conclusions rest on the live snapshot + topology, not history counts.
-> The recorder gap is itself worth investigating (possible DB corruption / disk).
+> ⚠️ The HA **recorder history is incomplete after ~2026-05-24**. Investigation (2026-05-30)
+> found the DB is healthy — 212 MB, disk 64% full, actively writing (live WAL/SHM),
+> **no `home-assistant_v2.db.corrupt.*` file**, no recorder errors in logs. Root cause
+> is unknown; best guess is HA 2026.5 update around 05-24 triggered a DB migration.
+> **Fixed:** added `recorder: purge_keep_days: 14` to `configuration.yaml` (was using HA
+> default of 10 days with no explicit config); pushed and reloaded 2026-05-30.
 
 ## Network
 - Integration: **ZHA**, radio **EZSP (Silabs)** = SLZB-06M coordinator, **wired PoE**, HA area *Living Room*.
@@ -57,13 +59,12 @@ real move is to **restore clean observability**, then watch the mesh catch the f
   parent locally (to the LR coordinator) instead of across the house; then re-pair the worst LR
   devices. Watch whether Hallway Router's child count and LR drops fall.
 
-### 2. Aggressive nightly restart regime — blocking clean diagnosis (fix FIRST)
+### 2. Aggressive nightly restart regime — ✅ STOPPED 2026-05-30 (user disabled via UI)
 - `config/automations/ui.yaml`: **03:00 HA restart**, **04:00 `reset_core`**, **04:30 `reset_zigbee`**
-  — three resets/night; two coordinator restarts 30 min apart is redundant/cargo-cult.
-- These don't explain *daytime* individual LR drops, but they **mask gradual degradation** and
-  contribute to the **recorder gap**, so they sabotage our ability to see the real pattern.
-- **Action (ask first):** reduce to at most the HA restart (or none) and observe for a few days
-  with clean history. *Do not delete outright* (house rule: deleting automations = ask first).
+  — three resets/night. The nightly ZHA reload (`reset_zigbee`) forced the whole mesh to
+  re-establish each night, which was itself an active Zigbee stressor (re-pair/re-route churn).
+- User disabled both the ZHA restart and HA auto-restart automations via HA UI (2026-05-30).
+  Let the mesh run continuously for several days and watch for improvement.
 
 ### 3. Cheap Tuya end-devices (LOWER — only suspect if user names a specific device)
 - Note: `None` LQI on TS0202 motion sensors is **normal** (sleepy PIRs transmit rarely), and the
@@ -77,8 +78,8 @@ real move is to **restore clean observability**, then watch the mesh catch the f
 - **Action:** a known-good mains router between the LR coordinator and the Master Bedroom.
 
 ## Cleanup
-- **Ghost device:** `MB Router` (TS0207, Master Bedroom) **unavailable since 2025-11-23** (~6 months).
-  Nothing routes through it anymore (cosmetic). Remove from ZHA.
+- **Ghost device:** `MB Router` (TS0207, Master Bedroom) — **✅ REMOVED 2026-05-30** via `zha.remove` service.
+  Had been offline since 2025-11-23 (~6 months). ZHA now has 27 devices, all available.
 
 ## Tools added (reusable, read-only)
 - `tools/zha_diag.py` — network + per-device LQI/RSSI/last-seen summary

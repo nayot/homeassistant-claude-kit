@@ -72,3 +72,6 @@ panel_custom:
 
 lovelace:
   mode: storage
+
+recorder:
+  purge_keep_days: 14
