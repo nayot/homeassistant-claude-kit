@@ -44,10 +44,7 @@ export const ROOMS: RoomConfig[] = [
     occupancySensor: "binary_sensor.restroom_motion_motion",
     temperatureSensor: "sensor.dht_temperature",
     humiditySensor: "sensor.dht_humidity",
-    climate: [
-      "climate.living_room_ac_living_room_ac",
-      "climate.mitsubishi_ac_5138b5_mitsubishi_ac",
-    ],
+    climate: ["climate.living_room_ac_living_room_ac"],
     mediaPlayers: [
       "media_player.sweety_tv",
       "media_player.xiaomi_tv_box",
