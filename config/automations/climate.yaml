@@ -1,0 +1,12 @@
+- id: post_shutdown_ac_study_room
+  alias: Post Shutdown A/C - Study Room
+  description: >
+    After Study Room A/C turns off, run fan-only on high for 15 minutes
+    then turn off completely.
+  use_blueprint:
+    path: custom/ac_post_shutdown_cooldown.yaml
+    input:
+      climate_entity: climate.study_room_ac_study_room_ac
+      high_fan_mode: high
+      auto_fan_mode: auto
+      cooldown_duration: 15
