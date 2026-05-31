@@ -45,8 +45,6 @@ function AcControls({ ac }: { ac: AcConfig }) {
   const tempStep = (entity?.attributes?.target_temp_step as number) ?? 1;
   const minTemp = (entity?.attributes?.min_temp as number) ?? 16;
   const maxTemp = (entity?.attributes?.max_temp as number) ?? 32;
-  const isManualServer = entities[ac.manualEntity]?.state === "on";
-
   // Shared group — freezes sibling controls when any is inflight on this entity
   const group = useControlGroup();
 
@@ -70,19 +68,16 @@ function AcControls({ ac }: { ac: AcConfig }) {
     callService(connection, "climate", "set_swing_mode", { swing_mode: v }, { entity_id: ac.entity });
   }, { debounceMs: 300, group });
 
-  const manual = useControlCommit(isManualServer, () => {
+  const isServerOff = hvacMode === "off" || hvacMode === "unavailable";
+  const power = useControlCommit(!isServerOff, (on) => {
     if (!connection) return;
-    callService(connection, "input_boolean", "toggle", {}, { entity_id: ac.manualEntity });
+    callService(connection, "climate", on ? "turn_on" : "turn_off", {}, { entity_id: ac.entity });
   }, { debounceMs: 200, group });
 
-  const isOff = mode.displayValue === "off";
-  const isManual = manual.displayValue;
-  const isTurningOff = !isManual && mode.displayValue !== "off" && mode.displayValue !== "unavailable";
-  const isBusy = mode.phase !== "idle" || fan.phase !== "idle" || swing.phase !== "idle" || manual.phase !== "idle";
-
-  // Timer remaining
-  const timerE = entities[ac.timerEntity];
-  const timerRemaining = isManual ? getTimerRemaining(timerE) : null;
+  const isOff = mode.displayValue === "off" || mode.displayValue === "unavailable";
+  const isCoolingDown = power.phase === "idle" && hvacMode === "fan_only";
+  const isOn = power.phase !== "idle" ? power.displayValue : !isOff && !isCoolingDown;
+  const isBusy = mode.phase !== "idle" || fan.phase !== "idle" || swing.phase !== "idle" || power.phase !== "idle";
 
   const hvacMeta = getMeta(HVAC_META, mode.displayValue);
   const actionLabel = hvacAction && hvacAction !== "idle" && hvacAction !== "off"
@@ -139,26 +134,29 @@ function AcControls({ ac }: { ac: AcConfig }) {
 
       {/* Power button */}
       <button
-        onClick={() => manual.set(!manual.displayValue)}
+        onClick={() => { power.set(!power.displayValue); power.commit(); }}
         className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-colors ${
-          isManual
+          isOn
             ? "bg-sky-400/10 text-sky-400 ring-1 ring-sky-400/30"
-            : isTurningOff
-            ? "bg-accent-warm/10 text-accent-warm ring-1 ring-accent-warm/20"
+            : isCoolingDown
+            ? "bg-yellow-400/10 text-yellow-400 ring-1 ring-yellow-400/20"
             : "bg-bg-elevated text-text-secondary hover:bg-white/8"
         }`}
       >
         <div className="flex items-center gap-2">
           <Icon
-            icon={isManual ? "mdi:power" : isTurningOff ? "mdi:fan" : "mdi:power-off"}
+            icon={isOn ? "mdi:power" : isCoolingDown ? "mdi:fan" : "mdi:power-off"}
             width={18}
-            className={isTurningOff ? "animate-spin" : ""}
+            className={isCoolingDown ? "animate-spin" : ""}
           />
-          <span className="font-medium">{isManual ? "On" : isTurningOff ? "Turning off" : "Off"}</span>
+          <span className="font-medium">
+            {power.phase !== "idle"
+              ? (power.displayValue ? "Turning on" : "Turning off")
+              : isOn ? "On"
+              : isCoolingDown ? "Turning off"
+              : "Off"}
+          </span>
         </div>
-        {timerRemaining && (
-          <span className="text-xs opacity-60">{timerRemaining} left</span>
-        )}
       </button>
 
       {/* Mode */}
@@ -204,14 +202,3 @@ function AcControls({ ac }: { ac: AcConfig }) {
   );
 }
 
-/** Extract remaining time from a timer entity. */
-function getTimerRemaining(timerEntity: HassEntities[string] | undefined): string | null {
-  if (!timerEntity || timerEntity.state !== "active") return null;
-  const finishesAt = timerEntity.attributes?.finishes_at as string | undefined;
-  if (!finishesAt) return null;
-  const remaining = new Date(finishesAt).getTime() - Date.now();
-  if (remaining <= 0) return null;
-  const h = Math.floor(remaining / 3_600_000);
-  const m = Math.floor((remaining % 3_600_000) / 60_000);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
