@@ -39,7 +39,6 @@ export const ROOMS: RoomConfig[] = [
       "light.leftrightlights_light",
       "light.leftrightlights_light_2",
       "light.center_light_4",
-      "light.center_light_6",
     ],
     occupancySensor: "binary_sensor.restroom_motion_motion",
     temperatureSensor: "sensor.dht_temperature",
