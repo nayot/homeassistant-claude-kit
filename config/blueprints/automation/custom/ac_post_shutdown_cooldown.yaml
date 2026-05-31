@@ -1,4 +1,3 @@
-
 blueprint:
   name: A/C Post-Shutdown Fan Cool-Down
   description: >
@@ -55,14 +54,14 @@ condition:
 
 action:
   - alias: "Switch to fan-only mode"
-    service: climate.set_hvac_mode
+    action: climate.set_hvac_mode
     target:
       entity_id: "{{ climate_entity }}"
     data:
       hvac_mode: fan_only
 
   - alias: "Set fan speed to high"
-    service: climate.set_fan_mode
+    action: climate.set_fan_mode
     target:
       entity_id: "{{ climate_entity }}"
     data:
@@ -73,14 +72,14 @@ action:
       minutes: "{{ cooldown_duration | int }}"
 
   - alias: "Set fan speed to auto"
-    service: climate.set_fan_mode
+    action: climate.set_fan_mode
     target:
       entity_id: "{{ climate_entity }}"
     data:
       fan_mode: "{{ auto_fan_mode | lower }}"
 
   - alias: "Turn off the A/C after cooldown"
-    service: climate.turn_off
+    action: climate.turn_off
     target:
       entity_id: "{{ climate_entity }}"
 
