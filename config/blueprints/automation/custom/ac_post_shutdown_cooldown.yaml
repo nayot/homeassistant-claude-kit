@@ -15,16 +15,15 @@ blueprint:
       name: High Fan Mode Name
       description: >
         The name of the "high" fan speed as reported by your A/C entity
-        (e.g. 'high', 'max', 'strong'). Case-insensitive.
+        (e.g. 'high', 'max', 'strong').
       default: "high"
     auto_fan_mode:
       name: Auto Fan Mode Name
       description: >
-        The name of the "auto" fan speed as reported by your A/C entity
-        (e.g. 'high', 'max', 'strong'). Case-insensitive.
+        The name of the "auto" fan speed as reported by your A/C entity.
       default: "auto"
     cooldown_duration:
-      name: Fan-Only Duration
+      name: Fan-Only Duration (minutes)
       description: Duration to run the fan before turning off.
       default: 15
       selector:
@@ -34,11 +33,7 @@ blueprint:
           unit_of_measurement: minutes
           mode: box
 
-variables:
-  climate_entity: !input climate_entity
-  high_fan_mode: !input high_fan_mode
-  cooldown_duration: !input cooldown_duration
-  auto_fan_mode: !input auto_fan_mode
+mode: restart
 
 trigger:
   - platform: state
@@ -46,8 +41,7 @@ trigger:
     to: "off"
 
 condition:
-  - alias: "Run only if previous mode was active cooling/drying/etc."
-    condition: template
+  - condition: template
     value_template: >
       {{ trigger.from_state is not none and
          trigger.from_state.state in ['cool','dry','heat_cool','heat','auto'] }}
@@ -56,31 +50,29 @@ action:
   - alias: "Switch to fan-only mode"
     action: climate.set_hvac_mode
     target:
-      entity_id: "{{ climate_entity }}"
+      entity_id: !input climate_entity
     data:
       hvac_mode: fan_only
 
   - alias: "Set fan speed to high"
     action: climate.set_fan_mode
     target:
-      entity_id: "{{ climate_entity }}"
+      entity_id: !input climate_entity
     data:
-      fan_mode: "{{ high_fan_mode | lower }}"
+      fan_mode: !input high_fan_mode
 
   - alias: "Wait for cooldown period"
     delay:
-      minutes: "{{ cooldown_duration | int }}"
+      minutes: !input cooldown_duration
 
   - alias: "Set fan speed to auto"
     action: climate.set_fan_mode
     target:
-      entity_id: "{{ climate_entity }}"
+      entity_id: !input climate_entity
     data:
-      fan_mode: "{{ auto_fan_mode | lower }}"
+      fan_mode: !input auto_fan_mode
 
-  - alias: "Turn off the A/C after cooldown"
+  - alias: "Turn off the A/C"
     action: climate.turn_off
     target:
-      entity_id: "{{ climate_entity }}"
-
-mode: restart
+      entity_id: !input climate_entity
