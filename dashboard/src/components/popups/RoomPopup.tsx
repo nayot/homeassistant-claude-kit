@@ -79,7 +79,7 @@ function RoomContent({ room }: { room: RoomConfig }) {
           {/* Lights */}
           {room.lights.length > 0 && (
             <Section title="Lights">
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 items-start gap-2">
                 {room.lights.map((id) => (
                   <LightControl key={id} entityId={id} stripPrefix={room.name} />
                 ))}
