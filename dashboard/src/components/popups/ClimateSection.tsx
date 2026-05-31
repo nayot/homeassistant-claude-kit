@@ -1,9 +1,12 @@
 import { lazy, Suspense, useState } from "react";
+import { useHass } from "@hakit/core";
+import { callService } from "home-assistant-js-websocket";
 import type { HassEntities } from "home-assistant-js-websocket";
 import { Icon } from "@iconify/react";
 import type { RoomConfig } from "../../lib/areas";
 import type { AcConfig } from "../../lib/acUnits";
 import { parseNumericState } from "../../lib/format";
+import { useControlCommit } from "../../lib/useControlCommit";
 import { Section } from "./RoomPopupShared";
 
 const AcControlPopup = lazy(() =>
@@ -82,34 +85,69 @@ function AcRow({
   entities: HassEntities;
   onTap: () => void;
 }) {
+  const connection = useHass((s) => s.connection);
   const entity = entities[ac.entity];
   const mode = entity?.state ?? "unavailable";
   const hvacAction = entity?.attributes?.hvac_action as string | undefined;
   const currentTemp = parseNumericState(entity?.attributes?.current_temperature as string | undefined);
   const targetTemp = parseNumericState(entity?.attributes?.temperature as string | undefined);
-  const toggleOn = ac.manualEntity ? entities[ac.manualEntity]?.state === "on" : false;
-  const isTurningOff = !toggleOn && mode !== "off" && mode !== "unavailable";
+
   const isOff = mode === "off" || mode === "unavailable";
+  const isCoolingDown = mode === "fan_only";
+  const isOn = !isOff && !isCoolingDown;
 
   const meta = HVAC_META[mode] ?? HVAC_META.unavailable;
   const activeAction = hvacAction && hvacAction !== "idle" && hvacAction !== "off" ? hvacAction : null;
-  const color = activeAction ? (ACTION_COLOR[activeAction] ?? meta.color) : meta.color;
+  const iconColor = activeAction ? (ACTION_COLOR[activeAction] ?? meta.color) : meta.color;
+
+  const powerControl = useControlCommit<boolean>(
+    !isOff,
+    (on) => {
+      if (!connection) return;
+      callService(connection, "climate", on ? "turn_on" : "turn_off", {}, { entity_id: ac.entity });
+    },
+    { debounceMs: 200 },
+  );
+
+  const handlePowerToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (powerControl.phase !== "idle") return;
+    powerControl.set(isOff);
+    powerControl.commit();
+  };
+
+  const statusColor = powerControl.phase !== "idle"
+    ? (powerControl.displayValue ? "text-sky-400" : "text-yellow-400")
+    : isOn ? "text-sky-400"
+    : isCoolingDown ? "text-yellow-400"
+    : "text-text-dim";
+
+  const statusLabel = powerControl.phase !== "idle"
+    ? (powerControl.displayValue ? "Turning on" : "Turning off")
+    : isOn ? "On"
+    : isCoolingDown ? "Turning off"
+    : "Off";
 
   return (
-    <button
+    <div
       onClick={onTap}
-      className="flex w-full items-center justify-between rounded-xl bg-bg-elevated p-3 text-left hover:bg-white/8 active:bg-white/8"
+      className="flex w-full cursor-pointer items-center justify-between rounded-xl bg-bg-elevated p-3 hover:bg-white/8 active:bg-white/8"
     >
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <Icon icon={meta.icon} width={15} className={color} />
-          <span className="text-sm font-medium">{ac.label}</span>
-          {activeAction && (
-            <span className={`text-xs capitalize ${color}`}>{activeAction}</span>
-          )}
-        </div>
-        <div className={`mt-0.5 text-xs ${toggleOn ? "text-sky-400" : isTurningOff ? "text-accent-warm" : "text-text-dim"}`}>
-          {toggleOn ? "On" : isTurningOff ? "Turning off" : "Off"}
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          onClick={handlePowerToggle}
+          className={`relative shrink-0 rounded-full p-1 -m-1 transition-colors after:absolute after:content-[''] after:-inset-2 ${powerControl.phase !== "idle" ? "pointer-events-none animate-pulse" : "hover:bg-white/10 active:bg-white/10 active:scale-95"}`}
+        >
+          <Icon icon={meta.icon} width={15} className={iconColor} />
+        </button>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{ac.label}</span>
+            {activeAction && (
+              <span className={`text-xs capitalize ${iconColor}`}>{activeAction}</span>
+            )}
+          </div>
+          <div className={`mt-0.5 text-xs ${statusColor}`}>{statusLabel}</div>
         </div>
       </div>
 
@@ -118,13 +156,11 @@ function AcRow({
           <span className="tabular-nums text-sm">{currentTemp.toFixed(1)}°</span>
         )}
         {!isOff && targetTemp !== null && (
-          <div className="text-right">
-            <div className="tabular-nums text-xs text-text-dim">{targetTemp.toFixed(0)}° target</div>
-          </div>
+          <div className="tabular-nums text-xs text-text-dim">{targetTemp.toFixed(0)}° target</div>
         )}
         <Icon icon="mdi:chevron-right" width={16} className="text-text-dim" />
       </div>
-    </button>
+    </div>
   );
 }
 
