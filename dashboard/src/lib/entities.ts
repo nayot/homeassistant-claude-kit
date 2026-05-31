@@ -131,11 +131,8 @@ export const TRANSITION_OFF              = "input_number.transition_off";
 
 // ── Climate / AC ───────────────────────────────────────────────────────────
 export const LR_AC           = "climate.living_room_ac_living_room_ac";
-export const LR_AC_MANUAL    = "input_boolean.living_room_ac_toggle";
 export const BR_AC           = "climate.master_bedroom_ac_master_bedroom_ac";
-export const BR_AC_MANUAL    = "input_boolean.master_bedroom_ac_toggle";
 export const STUDY_AC        = "climate.study_room_ac_study_room_ac";
-export const STUDY_AC_MANUAL = "input_boolean.study_room_ac_toggle";
 
 // ── Energy & power ─────────────────────────────────────────────────────────
 export const SOLAR_POWER = "";

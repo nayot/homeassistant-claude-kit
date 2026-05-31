@@ -75,11 +75,6 @@
       friendly_name: Master Living Room
       supported_features: 8
       state: 'off'
-    input_boolean.living_room_ac_toggle:
-      editable: true
-      icon: mdi:air-conditioner
-      friendly_name: Living Room AC Toggle
-      state: 'off'
     media_player.trueid_tv_box_2:
       assumed_state: true
       device_class: tv
@@ -89,8 +84,6 @@
   icon: mdi:sleep
   metadata:
     light.master_living_room:
-      entity_only: true
-    input_boolean.living_room_ac_toggle:
       entity_only: true
     media_player.trueid_tv_box_2:
       entity_only: true

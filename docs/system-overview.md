@@ -107,7 +107,7 @@ When an A/C turns off, the automation switches to `fan_only` on `high` for 15 mi
 ### A/C Dashboard Status
 The room card, room popup, **and the Climate view** derive A/C status from the actual climate entity state, not from any `input_boolean` helper. `fan_only` → yellow "Turning off"; any active mode → blue "On"; `off` → dim "Off".
 
-The legacy `… AC Toggle` automations (one per room, in `ui.yaml`) — which translated `input_boolean.*_ac_toggle` ↔ climate state and ran their own duplicate fan cooldown — were removed; the blueprint automations in `climate.yaml` are now the sole cooldown path. As a result the `input_boolean.*_ac_toggle` helpers are now fully orphaned: nothing maintains them and nothing reads them. They are safe to delete as a follow-up (still referenced harmlessly by the "Sleep" scene in `scenes.yaml` and as an unused `manualEntity` field in `dashboard/src/lib/acUnits.ts`).
+The legacy `… AC Toggle` automations (one per room, in `ui.yaml`) — which translated `input_boolean.*_ac_toggle` ↔ climate state and ran their own duplicate fan cooldown — were removed; the blueprint automations in `climate.yaml` are now the sole cooldown path. The now-orphaned `input_boolean.*_ac_toggle` helpers were subsequently deleted (via the WS `input_boolean/delete` API, as they were UI-created `.storage` helpers), along with their references: the "Going upstair" scene in `scenes.yaml`, the `*_AC_MANUAL` constants in `dashboard/src/lib/entities.ts`, and the `manualEntity` field in `dashboard/src/lib/acUnits.ts`.
 
 ## Known Issues / Workarounds
 
