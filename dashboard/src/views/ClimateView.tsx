@@ -72,9 +72,11 @@ function AcCard({ ac, entities, onTap }: AcCardProps) {
   const hvacAction = entity?.attributes?.hvac_action as string | undefined;
   const currentTemp = parseNumericState(entity?.attributes?.current_temperature as string | undefined);
   const targetTemp = parseNumericState(entity?.attributes?.temperature as string | undefined);
-  const toggleOn = ac.manualEntity ? entities[ac.manualEntity]?.state === "on" : false;
-  const isTurningOff = !toggleOn && mode !== "off" && mode !== "unavailable";
+  // Status derived from the climate entity's mode (matches RoomCard/RoomPopup):
+  // fan_only → post-shutdown cooldown ("Turning off"), any active mode → "On", off → "Off".
   const isOff = mode === "off" || mode === "unavailable";
+  const isTurningOff = mode === "fan_only";
+  const toggleOn = !isOff && !isTurningOff;
 
   const meta = HVAC_META[mode] ?? HVAC_META.unavailable;
   const activeAction = hvacAction && hvacAction !== "idle" && hvacAction !== "off" ? hvacAction : null;
