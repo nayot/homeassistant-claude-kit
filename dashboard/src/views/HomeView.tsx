@@ -5,11 +5,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ROOMS, type RoomConfig } from "../lib/areas";
 import {
   CONTEXT_CONFIG,
+  ENERGY_CONFIG,
   QUICK_ACTIONS_CONFIG,
   ACTIVE_AUTOMATIONS_CONFIG,
 } from "../lib/entities";
 import { ContextCard } from "../components/cards/ContextCard";
 import { EnergyCard } from "../components/cards/EnergyCard";
+import { MonthlyEnergyCard } from "../components/cards/MonthlyEnergyCard";
 import { QuickActions } from "../components/cards/QuickActions";
 import { RoomCard } from "../components/cards/RoomCard";
 import { ActiveAutomations } from "../components/cards/ActiveAutomations";
@@ -83,6 +85,7 @@ export function HomeView() {
 
       <ActiveAutomations config={ACTIVE_AUTOMATIONS_CONFIG} />
       <EnergyCard config={CONTEXT_CONFIG} />
+      <MonthlyEnergyCard config={ENERGY_CONFIG} />
 
       <RoomPopup
         room={selectedRoom}
