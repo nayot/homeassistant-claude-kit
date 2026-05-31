@@ -9,7 +9,7 @@
       climate_entity: climate.study_room_ac_study_room_ac
       high_fan_mode: high
       auto_fan_mode: auto
-      cooldown_duration: 1
+      cooldown_duration: 15
 
 - id: post_shutdown_ac_master_bedroom
   alias: Post Shutdown A/C - Master Bedroom

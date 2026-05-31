@@ -38,6 +38,10 @@ export function RoomCard({ room, onTap }: RoomCardProps) {
     dishwasherRemaining,
   } = state;
 
+  const isAcCoolingDown = (room.climate ?? []).some(
+    (id) => entities[id]?.state === "fan_only"
+  );
+
   const actions = useRoomActions(room, {
     lightsOn,
     coversOpen,
@@ -118,13 +122,17 @@ export function RoomCard({ room, onTap }: RoomCardProps) {
               width={14}
               className={
                 actions.climatePhase !== "idle"
-                  ? (actions.climateTarget ? "text-sky-400" : "text-text-dim")
-                  : (acAction !== undefined ? "text-sky-400" : "text-text-dim")
+                  ? (actions.climateTarget ? "text-sky-400" : "text-yellow-400")
+                  : isAcCoolingDown
+                    ? "text-yellow-400"
+                    : (acAction !== undefined ? "text-sky-400" : "text-text-dim")
               }
             />
             {actions.climatePhase !== "idle"
               ? (actions.climateTarget ? "Turning on" : "Turning off")
-              : (acAction !== undefined ? "On" : "Off")}
+              : isAcCoolingDown
+                ? "Turning off"
+                : (acAction !== undefined ? "On" : "Off")}
           </span>
         )}
 
