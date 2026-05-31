@@ -6,6 +6,8 @@ export interface RoomConfig {
   floor: number;
   icon: string;
   lights: string[];
+  /** Group/"master" light (a member of `lights`) rendered full-width above the rest. */
+  masterLight?: string;
   occupancySensor?: string;
   zoneOccupancy?: { entity: string; label: string }[];
   temperatureSensor?: string;
@@ -33,6 +35,7 @@ export const ROOMS: RoomConfig[] = [
     name: "Living Room",
     floor: 1,
     icon: "mdi:sofa",
+    masterLight: "light.master_living_room",
     lights: [
       "light.master_living_room",
       "light.living_room_down_lights",
@@ -54,6 +57,7 @@ export const ROOMS: RoomConfig[] = [
     name: "Master Bedroom",
     floor: 2,
     icon: "mdi:bed-king",
+    masterLight: "light.master_bedroom_lights",
     lights: [
       "light.master_bedroom_lights",
       "light.mb_down_light_group",
@@ -70,6 +74,7 @@ export const ROOMS: RoomConfig[] = [
     name: "Study Room",
     floor: 2,
     icon: "mdi:desk",
+    masterLight: "light.study_room_lights",
     lights: [
       "light.study_room_lights",
       "light.ambient_leds",

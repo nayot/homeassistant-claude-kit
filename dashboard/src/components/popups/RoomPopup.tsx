@@ -79,10 +79,18 @@ function RoomContent({ room }: { room: RoomConfig }) {
           {/* Lights */}
           {room.lights.length > 0 && (
             <Section title="Lights">
-              <div className="grid grid-cols-2 items-start gap-2">
-                {room.lights.map((id) => (
-                  <LightControl key={id} entityId={id} stripPrefix={room.name} />
-                ))}
+              <div className="space-y-2">
+                {/* Master/group light spans full width above the rest */}
+                {room.masterLight && room.lights.includes(room.masterLight) && (
+                  <LightControl entityId={room.masterLight} stripPrefix={room.name} />
+                )}
+                <div className="grid grid-cols-2 items-start gap-2">
+                  {room.lights
+                    .filter((id) => id !== room.masterLight)
+                    .map((id) => (
+                      <LightControl key={id} entityId={id} stripPrefix={room.name} />
+                    ))}
+                </div>
               </div>
             </Section>
           )}
