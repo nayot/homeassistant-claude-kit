@@ -9,4 +9,30 @@
       climate_entity: climate.study_room_ac_study_room_ac
       high_fan_mode: high
       auto_fan_mode: auto
-      cooldown_duration: 15
+      cooldown_duration: 1
+
+- id: post_shutdown_ac_master_bedroom
+  alias: Post Shutdown A/C - Master Bedroom
+  description: >
+    After Master Bedroom A/C turns off, run fan-only on high for 1 minute
+    then turn off completely.
+  use_blueprint:
+    path: custom/ac_post_shutdown_cooldown.yaml
+    input:
+      climate_entity: climate.master_bedroom_ac_master_bedroom_ac
+      high_fan_mode: high
+      auto_fan_mode: auto
+      cooldown_duration: 1
+
+- id: post_shutdown_ac_living_room
+  alias: Post Shutdown A/C - Living Room
+  description: >
+    After Living Room A/C turns off, run fan-only on high for 1 minute
+    then turn off completely.
+  use_blueprint:
+    path: custom/ac_post_shutdown_cooldown.yaml
+    input:
+      climate_entity: climate.living_room_ac_living_room_ac
+      high_fan_mode: high
+      auto_fan_mode: auto
+      cooldown_duration: 1
