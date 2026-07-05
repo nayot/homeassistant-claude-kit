@@ -172,3 +172,4 @@ config/go2rtc.yaml
 .claude/privacy-patterns
 memory/
 setup-state.json
+.upgrade-state.json
