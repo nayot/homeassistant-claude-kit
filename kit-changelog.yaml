@@ -1,0 +1,129 @@
+# kit-changelog.yaml — structured source of truth for homeassistant-claude-kit.
+# SELF-DESCRIBING: the `schema:` block below is the contract an agent reads cold.
+# Rendered to CHANGELOG.md by the `release` skill — NEVER hand-edit CHANGELOG.md.
+# Entries are APPEND-ONLY: `release` never rewrites an existing entry (hand-edits to
+# detect/apply are tolerated). detect / apply / conditions are agent-INTERPRETED prose
+# and are NEVER executed as code. Write them generically — never embed a specific entity ID.
+schema_version: 1
+
+schema:
+  id:             "stable kebab-case slug — permanent identity; key for the Phase-3 applied-ledger; never reused/rewritten"
+  version:        "semver string the change first shipped in"
+  type:           "fix | feature | change | removed | security — drives the CHANGELOG section ONLY"
+  breaking:       "bool — orthogonal to type; drives the version bump and the [**BREAKING**] render prefix"
+  title:          "one-line human summary; becomes the CHANGELOG bullet"
+  commits:        "list of short SHAs — the ground-truth diff (git show); apply must stay within baseline..target"
+  conditions:     "PRESENCE gate (prose): does this file/feature exist in the install at all? cheap short-circuit before detect"
+  detect:         "RELEVANCE gate: agent-interpreted PROSE, NEVER executed — the pattern that means you're affected; generic, no entity IDs"
+  detect_hint:    "OPTIONAL advisory aid — { grep: <generic regex>, files: [<glob>] }; never executed, never an entity ID"
+  apply:          "agent-interpreted guidance to adapt the diff to a diverged install; ground truth is `commits`; generic, no entity IDs"
+  default_action: "auto | ask | skip-if-absent — a CEILING the entry requests, NEVER authority to run transported files"
+
+# Bump rule (0.x): default PATCH for any releasable entry; escalate to MINOR iff any entry is
+# `feature` or `breaking`; highest-wins. At >= 1.0.0, `breaking` -> MAJOR.
+
+changes:
+  - id: baseline-v0-1-0
+    version: 0.1.0
+    type: feature
+    breaking: false
+    title: "Initial release baseline"
+    commits: ["2fbf556"]
+    conditions: ""
+    detect: ""
+    apply: ""
+    default_action: skip-if-absent
+
+  - id: versioning-upgrade-foundation
+    version: 0.2.0
+    type: feature
+    breaking: false
+    title: "Kit versioning + agent-driven upgrade foundation"
+    commits: ["009e6d2", "d6df24e", "457d5bd", "a09ca53"]
+    conditions: "Applies to any install — adds version tracking + the release workflow."
+    detect: >
+      Install has no .kit-version / kit-changelog.yaml / CHANGELOG.md and no
+      release skill — i.e. it predates the versioning system.
+    apply: >
+      Add .kit-version, kit-changelog.yaml, CHANGELOG.md, tools/validate_changelog.py,
+      the release skill, and setup-infrastructure Step 10 from the kit. Stamp
+      .kit-version with the version the install is on.
+    default_action: ask
+
+  - id: track-dashboard-lib-source
+    version: 0.2.0
+    type: change
+    breaking: false
+    title: "Track dashboard/src/lib generic source so a clean clone compiles"
+    commits: ["79976e8"]
+    conditions: "Applies if your kit clone could not build without manually restoring dashboard/src/lib."
+    detect: >
+      The broad Python `lib/` rule in .gitignore also matched dashboard/src/lib,
+      leaving the dashboard's generic source (control hooks, format utils, scaffolds)
+      untracked — a fresh clone failed to compile.
+    apply: >
+      Narrow the .gitignore `lib/` rule with `!dashboard/src/lib/` and track all of
+      dashboard/src/lib (incl. the entities.ts/areas.ts scaffolds).
+    default_action: ask
+
+  - id: trv-heating-count-ignores-valve-position
+    version: 0.2.0
+    type: fix
+    breaking: false
+    title: "TRV active-heating check ignores closed valves"
+    commits: ["27fd79b"]
+    conditions: "Only if your dashboard shows a per-room heating count (RoomCard / ClimateSection)."
+    detect: >
+      The heating count is derived from state == 'heat' WITHOUT checking valve
+      position, so a TRV at a low setpoint (valve closed) still counts as heating.
+    detect_hint:
+      grep: "state\\s*===?\\s*['\"]heat['\"]"
+      files: ["dashboard/src/hooks/useRoomState.ts", "dashboard/src/components/popups/ClimateSection.tsx"]
+    apply: >
+      Add lib/climate.ts::isTrvActivelyHeating (prefers hvac_action, falls back to
+      setpoint>current) and use it at both heating-count call-sites.
+    default_action: ask
+
+  - id: irrigation-core-view
+    version: 0.2.0
+    type: feature
+    breaking: false
+    title: "Irrigation core view + per-zone settings popup (replaces the stub)"
+    commits: ["6b97266", "32eab02"]
+    conditions: "Applies if your IrrigationView is still the placeholder stub."
+    detect: >
+      dashboard/src/views/IrrigationView.tsx renders PlaceholderSection cards and
+      imports nothing — the real irrigation view was never installed.
+    apply: >
+      Replace the stub with the real IrrigationView + IrrigationZonePopup +
+      useIrrigationRuns + the irrigation entities block, and copy the YAML templates
+      from docs/templates/config. Adapt the example zones to your real zones.
+    default_action: ask
+
+  - id: recipes-mealie-template
+    version: 0.2.0
+    type: feature
+    breaking: false
+    title: "Recipes (Mealie) optional template + setup guide"
+    commits: ["dcbc8a3"]
+    conditions: "Opt-in — requires the Mealie add-on, the official Mealie integration, and an LLM API key."
+    detect: "Install does not have docs/templates/recipes/ (the optional recipes feature)."
+    apply: >
+      Optional feature. Follow docs/templates/recipes/README.md to copy the dashboard
+      files, merge the config fragment, add the LLM secrets, and wire the nav entry.
+    default_action: skip-if-absent
+
+  - id: upgrade-skill
+    version: 0.3.0
+    type: feature
+    breaking: false
+    title: "Upgrade skill — consumer-side selective apply"
+    commits: ["6350d64"]
+    conditions: "Applies to any install on an older kit version."
+    detect: >
+      Install has no .claude/skills/upgrade — it predates the consumer-side upgrade
+      workflow and can only update via a manual git pull.
+    apply: >
+      Add the upgrade skill (.claude/skills/upgrade/ + references/apply-rubric.md) from
+      the kit. With it in place, future upgrades are agent-driven and selective.
+    default_action: ask
