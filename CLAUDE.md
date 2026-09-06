@@ -144,6 +144,21 @@ ssh "$SSH_USER@$HA_HOST" "bash ${HA_REMOTE_PATH:=/config/}claude-code-ha/install
 ```
 The repo itself persists in `/config/claude-code-ha/` (survives updates), only the symlinks and pip packages need reinstalling.
 
+**Known upstream bug (patched locally):** at `v1.0.0`, `ha-ws` and `lovelace-sync` build an
+SSL context and pass `ssl=` to `websockets.connect()` unconditionally. `websockets >= 14`
+rejects that on a plain `ws://` URI (`ValueError: ssl argument is incompatible with a ws://
+URI`), so both tools fail on any install whose `HA_URL` is plain HTTP — and `install.sh` pulls
+the latest `websockets`. Fixed by only building the context when the URL is `wss://`; the fix
+lives as a local commit in `/config/claude-code-ha/` (`git log` there), which `install.sh`
+never overwrites — it only chmods and re-symlinks `bin/`. Upstream issues
+[#2](https://github.com/danbuhler/claude-code-ha/issues/2) and
+[#5](https://github.com/danbuhler/claude-code-ha/issues/5) are still open; if you ever
+`git pull` that repo, re-check the patch survived. To re-apply after a fresh clone:
+
+```bash
+rsync -az tools/patch_claude_code_ha_ssl.py "$SSH_USER@$HA_HOST:/tmp/"
+ssh "$SSH_USER@$HA_HOST" "python3 /tmp/patch_claude_code_ha_ssl.py"
+```
 
 ## Debugging Automation Issues
 
