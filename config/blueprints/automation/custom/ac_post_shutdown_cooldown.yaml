@@ -72,6 +72,10 @@ action:
     data:
       fan_mode: !input auto_fan_mode
 
+  - alias: "Wait for IR command to be processed"
+    delay:
+      seconds: 3
+
   - alias: "Turn off the A/C"
     action: climate.turn_off
     target:

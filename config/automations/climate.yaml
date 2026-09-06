@@ -14,7 +14,7 @@
 - id: post_shutdown_ac_master_bedroom
   alias: Post Shutdown A/C - Master Bedroom
   description: >
-    After Master Bedroom A/C turns off, run fan-only on high for 1 minute
+    After Master Bedroom A/C turns off, run fan-only on high for 15 minutes
     then turn off completely.
   use_blueprint:
     path: custom/ac_post_shutdown_cooldown.yaml
