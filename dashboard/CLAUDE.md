@@ -102,6 +102,7 @@ src/
 - `Date.now()` on iframe `src` in `panel.js` handles `index.html` cache busting; React bundles use content hashes
 - Vite `base` is `/local/custom-dashboard/` — all assets are served from this path
 - Dev server proxies `/api`, `/local/snapshots`, `/media` to HA instance
+- HA's default-dashboard pickers cannot select a `panel_custom` panel — set it with `make set-default-dashboard` (see `docs/system-dashboard.md`)
 
 ## Unified Control System
 

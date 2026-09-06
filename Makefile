@@ -24,7 +24,7 @@ YELLOW = \033[1;33m
 RED = \033[0;31m
 NC = \033[0m # No Color
 
-.PHONY: help pull push diff validate backup clean setup test status entities reload format-yaml check-env dashboard deploy-dashboard privacy-on privacy-off privacy-status
+.PHONY: help pull push diff validate backup clean setup test status entities reload format-yaml check-env dashboard deploy-dashboard privacy-on privacy-off privacy-status set-default-dashboard
 
 # Default target
 help:
@@ -44,6 +44,11 @@ help:
 	@echo "  $(YELLOW)format-yaml$(NC) - Format YAML files (usage: make format-yaml [FILES='file1.yaml file2.yaml'])"
 	@echo "  $(YELLOW)check-env$(NC) - Validate environment configuration (.env file)"
 	@echo "  $(YELLOW)clean$(NC)    - Clean up temporary files and caches"
+	@echo ""
+	@echo "Dashboard:"
+	@echo "  $(YELLOW)deploy-dashboard$(NC)      - Build and deploy the React panel to HA"
+	@echo "  $(YELLOW)set-default-dashboard$(NC) - Make the custom panel HA's default dashboard"
+	@echo "                            (usage: make set-default-dashboard [ARGS='--show'])"
 	@echo ""
 	@echo "Privacy:"
 	@echo "  $(YELLOW)privacy-on$(NC)     - Enable privacy mode (restricts what Claude Code can read)"
@@ -223,6 +228,12 @@ deploy-dashboard: check-env
 	@rsync -avz --delete dashboard/dist/ "$(SSH_USER)@$(HA_HOST):$(HA_REMOTE_PATH)www/custom-dashboard/"
 	@rsync -avz dashboard/panel.js "$(SSH_USER)@$(HA_HOST):$(HA_REMOTE_PATH)www/custom-dashboard/panel.js"
 	@echo "$(GREEN)Dashboard deployed! Hard-refresh browser to load new version.$(NC)"
+
+# Make the custom panel the default dashboard.
+# HA's own picker cannot select a panel_custom panel (see docs/system-dashboard.md),
+# so this writes core.default_panel over the supported WebSocket API.
+set-default-dashboard: check-env
+	@$(VENV_PATH)/bin/python $(TOOLS_PATH)/set_default_dashboard.py $(ARGS)
 
 # Privacy mode targets
 privacy-on:
