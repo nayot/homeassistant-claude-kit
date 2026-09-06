@@ -152,8 +152,10 @@ the latest `websockets`. Fixed by only building the context when the URL is `wss
 lives as a local commit in `/config/claude-code-ha/` (`git log` there), which `install.sh`
 never overwrites — it only chmods and re-symlinks `bin/`. Upstream issues
 [#2](https://github.com/danbuhler/claude-code-ha/issues/2) and
-[#5](https://github.com/danbuhler/claude-code-ha/issues/5) are still open; if you ever
-`git pull` that repo, re-check the patch survived. To re-apply after a fresh clone:
+[#5](https://github.com/danbuhler/claude-code-ha/issues/5) are still open. A `git pull` there
+will have to merge over the local commit rather than silently drop it; if upstream ever ships
+the fix, drop the local commit and re-run `install.sh`. Rollback is git on the host
+(`git revert`, or `git checkout v1.0.0 -- bin/`). To re-apply after a fresh clone:
 
 ```bash
 rsync -az tools/patch_claude_code_ha_ssl.py "$SSH_USER@$HA_HOST:/tmp/"
