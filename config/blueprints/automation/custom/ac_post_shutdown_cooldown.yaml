@@ -3,6 +3,10 @@ blueprint:
   description: >
     When the A/C turns off manually or after cooling,
     switch to fan-only high speed for a duration, then turn off completely.
+    If the A/C is changed out of fan-only during the cool-down (someone
+    changed their mind and picked cool/auto again, or turned it off outright),
+    the cool-down is cancelled: the fan speed it had before the shutdown is
+    handed back and the A/C is left alone.
   domain: automation
 
   input:
@@ -61,9 +65,65 @@ action:
     data:
       fan_mode: !input high_fan_mode
 
-  - alias: "Wait for cooldown period"
-    delay:
+  - alias: "Wait out the cool-down, or wake up early if the A/C leaves fan-only"
+    wait_for_trigger:
+      - platform: state
+        entity_id: !input climate_entity
+        not_to:
+          - fan_only
+          - unavailable
+          - unknown
+    timeout:
       minutes: !input cooldown_duration
+    continue_on_timeout: true
+
+  - alias: "Cancel the cool-down if the A/C was changed during it"
+    if:
+      - condition: or
+        conditions:
+          - alias: "The A/C changed state before the cool-down elapsed"
+            condition: template
+            value_template: "{{ wait.trigger is not none }}"
+          - alias: "The A/C is no longer in fan-only"
+            condition: not
+            conditions:
+              - condition: state
+                entity_id: !input climate_entity
+                state: fan_only
+    then:
+      - alias: "Hand back the fan speed from before the shutdown"
+        if:
+          - alias: "The A/C is still running"
+            condition: not
+            conditions:
+              - condition: state
+                entity_id: !input climate_entity
+                state:
+                  - "off"
+                  - unavailable
+                  - unknown
+          - alias: "The fan is still on the cool-down speed"
+            condition: state
+            entity_id: !input climate_entity
+            attribute: fan_mode
+            state: !input high_fan_mode
+          - alias: "The pre-shutdown fan speed is known"
+            condition: template
+            value_template: >
+              {{ trigger.from_state.attributes.fan_mode is defined and
+                 trigger.from_state.attributes.fan_mode
+                   not in [none, '', 'unknown', 'unavailable'] }}
+        then:
+          - alias: "Wait for IR command to be processed"
+            delay:
+              seconds: 3
+          - action: climate.set_fan_mode
+            target:
+              entity_id: !input climate_entity
+            data:
+              fan_mode: "{{ trigger.from_state.attributes.fan_mode }}"
+      - alias: "Leave the A/C as the user set it"
+        stop: "Cool-down cancelled - the A/C was changed out of fan-only"
 
   - alias: "Set fan speed to auto"
     action: climate.set_fan_mode

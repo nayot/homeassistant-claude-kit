@@ -39,6 +39,10 @@ Blueprint: `blueprints/automation/custom/ac_post_shutdown_cooldown.yaml`
 
 When any A/C turns off from an active mode (cool/dry/heat_cool/heat/auto), the automation switches to `fan_only` on `high` for 15 minutes to cool down the coil, then turns off. During this cooldown the dashboard shows a yellow "Turning off" label on the room card and in the A/C popup.
 
+**Cancellation.** The cooldown is abortable. Instead of a blind `delay`, the blueprint uses a `wait_for_trigger` on the climate entity leaving `fan_only` (`not_to: [fan_only, unavailable, unknown]`, so transient unavailability and attribute-only changes do not count) with `timeout: cooldown_duration` and `continue_on_timeout: true`. It only proceeds to shut down when the wait actually timed out (`wait.trigger is none`) **and** the entity is still in `fan_only` — the second check covers the race where someone picks a mode between `set_hvac_mode: fan_only` and the wait starting. Otherwise the run `stop`s and leaves the A/C as the user set it, first handing back `trigger.from_state.attributes.fan_mode` (the fan speed from before the shutdown, after the same 3s IR settle delay used before the final shutdown — the user's own mode command has just gone out over IR) if the fan is still on the cooldown `high` speed and the unit is still running — the cooldown forces `high`, so without this a mind-changed A/C would keep cooling on high. Pressing off again while in `fan_only` also cancels (the unit is already off; no further IR is sent). Turning the A/C off from an active mode again starts a fresh cooldown (`mode: restart`).
+
+No dashboard change was needed: status is derived from the entity state, so a cancelled cooldown flips from yellow "Turning off" back to blue "On" on its own.
+
 Automations: `config/automations/climate.yaml`
 
 ## Lighting
@@ -102,7 +106,7 @@ Automations: `config/automations/climate.yaml`
 ## Automation Design Decisions
 
 ### A/C Post-Shutdown Fan Cooldown
-When an A/C turns off, the automation switches to `fan_only` on `high` for 15 minutes before fully shutting down. This prevents heat buildup in the coil. The dashboard reflects this with a yellow "Turning off" state (not "On") so the transition is visible. The blueprint uses `!input` directly in action targets — the `variables:` + Jinja2 template approach causes HA 2026.x to time out during blueprint automation creation.
+When an A/C turns off, the automation switches to `fan_only` on `high` for 15 minutes before fully shutting down. This prevents heat buildup in the coil. The cooldown is cancellable — changing the A/C out of `fan_only` mid-cooldown (accidental shutdown, corrected) aborts the run and restores the pre-shutdown fan speed instead of forcing the unit off; see [Post-Shutdown Cooldown](#post-shutdown-cooldown) for the mechanism. The dashboard reflects this with a yellow "Turning off" state (not "On") so the transition is visible. The blueprint uses `!input` directly in action targets — the `variables:` + Jinja2 template approach causes HA 2026.x to time out during blueprint automation creation.
 
 ### A/C Dashboard Status
 The room card, room popup, **and the Climate view** derive A/C status from the actual climate entity state, not from any `input_boolean` helper. `fan_only` → yellow "Turning off"; any active mode → blue "On"; `off` → dim "Off".

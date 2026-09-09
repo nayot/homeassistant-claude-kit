@@ -1,8 +1,9 @@
 - id: post_shutdown_ac_study_room
   alias: Post Shutdown A/C - Study Room
   description: >
-    After Study Room A/C turns off, run fan-only on high for 1 minute
-    then turn off completely.
+    After Study Room A/C turns off, run fan-only on high for 15 minutes
+    then turn off completely. Cancelled if the A/C is changed out of
+    fan-only during the cool-down.
   use_blueprint:
     path: custom/ac_post_shutdown_cooldown.yaml
     input:
@@ -15,7 +16,8 @@
   alias: Post Shutdown A/C - Master Bedroom
   description: >
     After Master Bedroom A/C turns off, run fan-only on high for 15 minutes
-    then turn off completely.
+    then turn off completely. Cancelled if the A/C is changed out of
+    fan-only during the cool-down.
   use_blueprint:
     path: custom/ac_post_shutdown_cooldown.yaml
     input:
@@ -27,8 +29,9 @@
 - id: post_shutdown_ac_living_room
   alias: Post Shutdown A/C - Living Room
   description: >
-    After Living Room A/C turns off, run fan-only on high for 1 minute
-    then turn off completely.
+    After Living Room A/C turns off, run fan-only on high for 15 minutes
+    then turn off completely. Cancelled if the A/C is changed out of
+    fan-only during the cool-down.
   use_blueprint:
     path: custom/ac_post_shutdown_cooldown.yaml
     input:
